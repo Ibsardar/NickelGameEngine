@@ -82,7 +82,7 @@ InitGame.does = () => {
     targets.push(...akTest2.skeleton.limbs);
     Actor.set_targets(targets, 'test-1');
 
-    //Actor.delete_group('test-1');
+    Actor.delete_group('test-1');
 
     akNecron = new NecronWarrior('necrons', 'A');
     akNecron.position = [75,175];
