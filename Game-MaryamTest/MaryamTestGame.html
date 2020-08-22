@@ -1,0 +1,64 @@
+<!DOCTYPE HTML>
+
+<html lang="en-US">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Maryam Test Game</title>
+    <link rel="stylesheet" href="../styles/style.css" type="text/css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">
+    </script>
+    <script src = "../engine/N2Base.js">
+    </script>
+    <script src = "../engine/Nickel2.js">
+    </script>
+    <script src = "https://cdnjs.cloudflare.com/ajax/libs/howler/2.1.2/howler.min.js">
+    </script>
+    <!-- removes favicon.ico error -->
+    <link rel="shortcut icon" href="">
+</head>
+
+<body class="ctr">
+    <div id="padding" class="pad"></div>
+    <div id="start_button" class="btn3d" onclick="load_modules()">
+        Play
+    </div>
+    <div id="main">
+    </div>
+</body>
+</html>
+
+<script>
+
+    // after some event:
+    // will remove play button
+    // will load all modules
+    // (should count as a gesture for audio playback)
+    function load_modules() {
+        
+        // remove play button
+        var pad = document.getElementById('padding');
+        var btn = document.getElementById('start_button');
+        document.body.removeChild(pad);
+        document.body.removeChild(btn);
+
+        // modules to attach to DOM
+        var modules = [
+            '../scripts/game.js',        // game
+            '../scripts/data_loader.js', // data_loader
+            './maryam_main.js'          // main
+        ];
+
+        // attach modules
+        for (var i in modules) {
+            var script = document.createElement('script');
+            script.setAttribute('type', 'module');
+            script.setAttribute('src', modules[i]);
+            document.head.appendChild(script);
+        }
+
+        // notify
+        console.log('Modules loaded');
+    }
+
+</script>

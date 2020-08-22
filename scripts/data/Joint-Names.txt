@@ -1,0 +1,5 @@
+pivot                   : [x,y]     turning/scaling/positioning center point of sprite
+siz                     : [w,h]     scale of image relative to its parent
+rot                     : degs      rotation of image relative to its parent
+larm                    : [x,y]     joint of left arm on body
+rarm                    : [x,y]     joint of right arm on body

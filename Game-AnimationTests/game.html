@@ -1,0 +1,102 @@
+<!--
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Author:         Ibrahim Sardar
+//  Keywords:       Testing Views
+//  Filename:       game.html
+//  Date:           12/26/2019
+//  Description:    Basic game with different Views.
+//
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Honor Pledge:
+//
+//  I pledge that I have neither given nor received any help on this assignment.
+//
+//  ibsardar
+//
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2019 Copyright Holder All Rights Reserved.
+//
+////////////////////////////////////////////////////////////////////////////////
+--->
+
+<!DOCTYPE HTML>
+
+<html lang="en-US">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Game of Automatons</title>
+    <link rel="stylesheet" href="../styles/style.css" type="text/css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">
+    </script>
+    <script src = "../engine/N2Base.js">
+    </script>
+    <script src = "../engine/Nickel2.js">
+    </script>
+    <script src = "https://cdnjs.cloudflare.com/ajax/libs/howler/2.1.2/howler.min.js">
+    </script>
+    <script src = "https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.0.4/chroma.min.js">
+    </script>
+    <script src = "https://cdnjs.cloudflare.com/ajax/libs/stackblur-canvas/2.2.0/stackblur.min.js">
+    </script>
+    <!-- fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300;400;700&display=swap" rel="stylesheet"> <!-- narrow-futuristic-blocky -->
+    <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet"> <!-- modern -->
+    <link href="https://fonts.googleapis.com/css2?family=Medula+One&display=swap" rel="stylesheet"> <!-- narrow-blocky -->
+    <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;700&display=swap" rel="stylesheet"> <!-- futuristic -->
+    <!-- removes favicon.ico error -->
+    <link rel="shortcut icon" href="">
+</head>
+
+<body class="ctr">
+    <div id="padding1" class="pady"></div>
+    <div id="padding2" class="pady"></div>
+    <div id="start_button" class="btn3d" onclick="load_modules()">
+        Play
+    </div>
+    <div id="main">
+    </div>
+</body>
+</html>
+
+<script>
+
+    // after some event:
+    // will remove play button
+    // will load all modules
+    // (should count as a gesture for audio playback)
+    function load_modules() {
+        
+        // remove play button
+        var pad1 = document.getElementById('padding1');
+        var btn = document.getElementById('start_button');
+        document.body.removeChild(pad1);
+        document.body.removeChild(btn);
+
+        // modules to attach to DOM
+        var modules = [
+            '../scripts/game.js',            // game file
+            '../scripts/data_loader2.js',    // data-load file
+            './main.js'                     // main file
+        ];
+
+        // attach modules
+        (function next(i=0) {
+            if (i < modules.length) {
+                var script = document.createElement('script');
+                script.addEventListener('load', function tmp() {
+                    next(++i);
+                    script.removeEventListener('load', tmp);
+                });
+                script.setAttribute('type', 'module');
+                script.setAttribute('src', modules[i]);
+                document.head.appendChild(script);
+            } else
+                console.log("Modules loaded.");
+        }) ();
+    }
+
+</script>

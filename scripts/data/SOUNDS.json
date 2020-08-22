@@ -1,0 +1,9 @@
+{
+    "START" : { "src" : ["../audio/start.wav"], "volume" : 1.0 },
+    "HOVER_01" : { "src" : ["../audio/ui/hover_01.wav"], "volume" : 1.0},
+    "HOVER_02" : { "src" : ["../audio/ui/hover_02.wav"], "volume" : 1.0},
+    "HOVER_03" : { "src" : ["../audio/ui/hover_03.wav"], "volume" : 1.0},
+    "HOVER_04" : { "src" : ["../audio/ui/hover_04.wav"], "volume" : 1.0},
+    "HOVER_05" : { "src" : ["../audio/ui/hover_05.wav"], "volume" : 1.0},
+    "LASER" : { "src" : ["../audio/laser.wav"], "volume" : 0.85 }
+}
