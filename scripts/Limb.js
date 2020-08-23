@@ -664,7 +664,7 @@ class Limb {
         else if (pivot) this.sprite.set_origin(pivot);
         if (is_loco) this.sprite = new Locomotive({sprite: this.sprite});
         if (off_pos) this._body_offset.pos = Nickel.v2d.copy(off_pos);
-        if (off_rot || off_rot === 0) this._body_offset.rot = Nickel.v2d.copy(off_rot);
+        if (off_rot || off_rot === 0) this._body_offset.rot = off_rot;
         if (off_siz) this._body_offset.siz = Nickel.v2d.copy(off_siz);
     }
 
@@ -682,7 +682,7 @@ class Limb {
         if (origin === true) this.sprite.set_origin_centered();
         else if (origin) this.sprite.set_origin(Nickel.v2d.copy(origin));
         if (off_pos) this._body_offset.pos = Nickel.v2d.copy(off_pos);
-        if (off_rot || off_rot === 0) this._body_offset.rot = Nickel.v2d.copy(off_rot);
+        if (off_rot || off_rot === 0) this._body_offset.rot = off_rot;
         if (off_siz) this._body_offset.siz = Nickel.v2d.copy(off_siz);
     }
 
