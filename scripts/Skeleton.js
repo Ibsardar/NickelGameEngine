@@ -38,6 +38,9 @@ class Skeleton {
         this._root = root_limb;
         if (!Skeleton._scene)
             Skeleton._scene = scene;
+
+        // by default, allow root limb of Skeleton to move freely
+        this._root.unlock();
     }
 
     /**
@@ -102,6 +105,11 @@ class Skeleton {
 
         this._parts[name] = limb;
     }
+    
+    /**
+     * Alias of add_part.
+     */
+    set_part = this.add_part;
 
     /**
      * Access a named limb via its name.
@@ -122,7 +130,7 @@ class Skeleton {
     set body(l) { this._root = l; }
 
     /**
-     * Child limbs of root of skeleton.
+     * Returns list of all limbs in skeleton.
      * 
      * @type {Limb[]} limb array
      */

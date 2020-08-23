@@ -48,39 +48,39 @@ InitGame.does = () => {
 
     GameManager.init(Game);
 
-    lBody = new Limb(Game, DATA.IMG.CREEP_01, true, 'above', {}) // body
-            .attach(new Limb(Game, DATA.IMG.HEALTHBAR_RED, true, 'below', {pos:[0,4], rot:-45}, [0,0]) // arm
-                .attach(new Limb(Game, DATA.IMG.HEALTHBAR_GREEN, true, 'above', {pos:[96,0], rot:90}, [0,0]))); // forearm
-    skTest = new Skeleton(lBody);
-    akTest = new Actor(Game, {
-        'skeleton' : skTest,
-        'targets' : [],
-        'group' : 'test-1',
-        'on_create' : () => console.log('Created akTest!'),
-        'on_hit' : () => console.log('Collision on akTest!'),
-        'on_destroyed' : () => console.log('Destroyed akTest!'),
-        'on_delete' : () => console.log('Delete akTest!'),
-    });
+    // lBody = new Limb(Game, DATA.IMG.CREEP_01, true, 'above', {}) // body
+    //         .attach(new Limb(Game, DATA.IMG.HEALTHBAR_RED, true, 'below', {pos:[0,4], rot:-45}, [0,0]) // arm
+    //             .attach(new Limb(Game, DATA.IMG.HEALTHBAR_GREEN, true, 'above', {pos:[96,0], rot:90}, [0,0]))); // forearm
+    // skTest = new Skeleton(lBody);
+    // akTest = new Actor(Game, {
+    //     'skeleton' : skTest,
+    //     'targets' : [],
+    //     'group' : 'test-1',
+    //     'on_create' : () => console.log('Created akTest!'),
+    //     'on_hit' : () => console.log('Collision on akTest!'),
+    //     'on_destroyed' : () => console.log('Destroyed akTest!'),
+    //     'on_delete' : () => console.log('Delete akTest!'),
+    // });
 
-    akTest.position = [250,250];
+    // akTest.position = [250,250];
 
-    akTest2 = akTest.clone();
+    // akTest2 = akTest.clone();
 
-    akTest2.on('create', () => console.log('Created akTest2!!!'));
-    akTest2.on('hit', () => console.log('Collision on akTest2!!!'));
-    akTest2.on('destroy', () => console.log('Destroyed akTest2!!!'));
-    akTest2.on('delete', () => console.log('Deleted akTest2!!!'));
-    akTest2.position = [400,250];
+    // akTest2.on('create', () => console.log('Created akTest2!!!'));
+    // akTest2.on('hit', () => console.log('Collision on akTest2!!!'));
+    // akTest2.on('destroy', () => console.log('Destroyed akTest2!!!'));
+    // akTest2.on('delete', () => console.log('Deleted akTest2!!!'));
+    // akTest2.position = [400,250];
 
-    akTest2.update_more = () => {
-        var p = akTest2.position;
-        akTest2.position = [p[0] - 1, p[1]];
-    }
+    // akTest2.update_more = () => {
+    //     var p = akTest2.position;
+    //     akTest2.position = [p[0] + 1, p[1]];
+    // }
 
-    var targets = [];
-    targets.push(...akTest.skeleton.limbs);
-    targets.push(...akTest2.skeleton.limbs);
-    Actor.set_targets(targets, 'test-1');
+    // var targets = [];
+    // targets.push(...akTest.skeleton.limbs);
+    // targets.push(...akTest2.skeleton.limbs);
+    // Actor.set_targets(targets, 'test-1');
 
     //Actor.delete_group('test-1');
 
@@ -89,7 +89,7 @@ InitGame.does = () => {
 
     // junk
     //Nickel.GLOBALS.Game = Game;
-    //Nickel.GLOBALS.akNecron = akNecron;
+    Nickel.GLOBALS.akNecron = akNecron;
     //Nickel.GLOBALS.akTest = akTest;
     //Nickel.GLOBALS.akTest2 = akTest2;
     //Nickel.GLOBALS.Actor = Actor;
@@ -101,8 +101,8 @@ GameLoop.does = () => {
 
     Game.clear();
 
-    akTest.update();
-    akTest2.update();
+    //akTest.update();
+    //akTest2.update();
     akNecron.update();
 
     Actor.handle_triggers(); // should be taken care of in GameManager

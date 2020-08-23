@@ -183,7 +183,8 @@ class Limb {
         this._check_changes();
         this._update_limb();
         for (let child of this._limb_node.children)
-            child.obj._handle_transform();
+            if (!child.obj.disabled)
+                child.obj._handle_transform();
     }
 
     /**
@@ -192,14 +193,16 @@ class Limb {
     _handle_sprite() {
 
         for (let child of this._limb_node.children)
-            if (!child.obj._overlaps_body)
-                child.obj._handle_sprite();
+            if (!child.obj.disabled)
+                if (!child.obj._overlaps_body)
+                    child.obj._handle_sprite();
 
         this.sprite.update();
         
         for (let child of this._limb_node.children)
-            if (child.obj._overlaps_body)
-                child.obj._handle_sprite();
+            if (!child.obj.disabled)
+                if (child.obj._overlaps_body)
+                    child.obj._handle_sprite();
     }
 
     /**
@@ -264,7 +267,7 @@ class Limb {
 
     /**
      * @todo utilize data inside of '_olocks' in '_update_limb'
-     * @todo HERE!!!!! ... <- are these issues resolved???
+     * @todo HERE!!!!! ... <- are the above issues resolved???
      * 
      * Locks the tagged transfomation to the body offset. Can
      * update current transformation as the body offset.
@@ -521,6 +524,16 @@ class Limb {
     }
 
     /**
+     * Returns a specific child limb.
+     * 
+     * @returns {Limb} Limb
+     */
+    nth_child(n) {
+
+        return this._limb_node.children[n].obj;
+    }
+
+    /**
      * Returns if this limb has children or not
      * 
      * @returns {Boolean} has children or not
@@ -571,7 +584,7 @@ class Limb {
     copy() {
 
         // new Limb
-        var copied = new Limb(this.sprite.scene, null, null, this.overlap, this._body_offset, false);
+        var copied = new Limb(this.sprite.scene, false, false, this.overlap, this._body_offset, false);
         copied.sprite = this.sprite.copy_frozen();
         copied.sprite.update_before = () => {};
         copied.sprite.update_more = () => {};
@@ -579,6 +592,7 @@ class Limb {
         copied._olocks.rot = this._olocks.rot;
         copied._olocks.siz = this._olocks.siz;
         copied.actor = this.actor;
+        copied.enable();
         
         return copied;
     }

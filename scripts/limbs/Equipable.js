@@ -59,7 +59,7 @@ class Equipable extends Limb {
     }
 
     /**
-     * Forgets the remembered node.
+     * Forgets the remembered limb/node.
      */
     forget() {
 

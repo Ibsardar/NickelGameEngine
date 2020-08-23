@@ -49,7 +49,7 @@ class NecronWarrior extends UnitActor {
         super(GaMa.scene, humanoid_sk, group);
 
         var gun = new GaussRifle();
-        this.equip(gun, 'rarm');
+        this.equip(gun,'rarm');
         this.skeleton.part('rarm').enable();
         this._team = team;
     }

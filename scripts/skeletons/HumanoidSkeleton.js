@@ -50,11 +50,8 @@ class HumanoidSkeleton extends Skeleton {
 
         // label the limbs
         this.add_part('body', this.body);
-        this.add_part('larm', this.limbs[0]);
-        this.add_part('rarm', this.limbs[1]);
-
-        // allow body to move freely
-        this.body.unlock();
+        this.add_part('larm', this.body.nth_child(0));
+        this.add_part('rarm', this.body.nth_child(1));
     }
 
     /**

@@ -487,6 +487,7 @@ class Actor {
             return false;
         } else if (remember) {
 
+            this.skeleton.set_part(part_name, equipable);
             if (part instanceof Equipable) {
 
                 var old_limb = part.remember();
@@ -508,6 +509,7 @@ class Actor {
             }
         } else {
 
+            this.skeleton.set_part(part_name, equipable);
             if (part instanceof Equipable) {
 
                 var replaced = part.replace(equipable);
@@ -547,16 +549,19 @@ class Actor {
             return false;
         } else if (replacement) {
 
+            this.skeleton.set_part(part_name, replacement);
             var equipable = part.replace(replacement);
             this.trigger('unequip', this, equipable);
             return equipable;
         } else if (part.remember()) {
 
+            this.skeleton.set_part(part_name, part.remember());
             var equipable = part.replace(part.remember());
             this.trigger('unequip', this, equipable);
             return equipable;
         } else {
 
+            this.skeleton.set_part(part_name, null);
             var equipable = part.remove();
             this.trigger('unequip', this, equipable);
             return equipable;
