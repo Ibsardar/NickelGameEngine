@@ -55,6 +55,7 @@ class NecronWraith extends UnitActor {
         var rclaw = new ScalpelClaw();
         this.equip(rclaw, 'rhand');
         rclaw.sprite.flip_v(true);
+        this.skeleton.part('rhand').offset_position = [4,1];
 
         this._team = team;
     }
@@ -73,7 +74,7 @@ class NecronWraith extends UnitActor {
         rarm: DATA.IMG.NECRON_PART_01,
         back: DATA.IMG.NECRON_PART_03,
         lfarm: DATA.IMG.NECRON_PART_02,
-        lfarm: DATA.IMG.NECRON_PART_02,
+        rfarm: DATA.IMG.NECRON_PART_02,
         tail: DATA.IMG.NECRON_PART_04,
         lhand: null,
         rhand: null

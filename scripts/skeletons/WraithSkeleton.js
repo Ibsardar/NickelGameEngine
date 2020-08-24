@@ -73,6 +73,16 @@ class WraithSkeleton extends Skeleton {
         this.add_part('lhand', this.body.nth_child(0).nth_child(0).nth_child(0));
         this.add_part('rhand', this.body.nth_child(1).nth_child(0).nth_child(0));
         this.add_part('tail', this.body.nth_child(2).nth_child(0));
+
+        // set overlaps
+        this.part('larm').overlap = false;
+        this.part('rarm').overlap = false;
+        this.part('lfarm').overlap = false;
+        this.part('rfarm').overlap = false;
+        this.part('lhand').overlap = false;
+        this.part('rhand').overlap = false;
+        this.part('back').overlap = false;
+        this.part('tail').overlap = false;
     }
 
     /**
@@ -151,8 +161,8 @@ class WraithSkeleton extends Skeleton {
         gud = gud && _set('rfarm', rf, this._set_rfarm);
         gud = gud && _set('tail', ta, this._set_tail);
         if (!gud) return;
-        gud = gud && _set('lhand', rh, this._set_lhand);
-        gud = gud && _set('rhand', lh, this._set_rhand);
+        gud = gud && _set('lhand', lh, this._set_lhand);
+        gud = gud && _set('rhand', rh, this._set_rhand);
     }
 
     /**
@@ -192,7 +202,7 @@ class WraithSkeleton extends Skeleton {
             false, // is collidable?
             false, // is locomotive?
             ba.pivot ?? true,
-            b.rarm ?? [0,0],
+            b.back ?? [0,0],
             ba.rot ?? 0,
             ba.siz ?? [1,1]
         );
@@ -214,7 +224,7 @@ class WraithSkeleton extends Skeleton {
             false, // is collidable?
             false, // is locomotive?
             t.pivot ?? true,
-            b.rarm ?? [0,0],
+            b.tail ?? [0,0],
             t.rot ?? 0,
             t.siz ?? [1,1]
         );
@@ -280,7 +290,7 @@ class WraithSkeleton extends Skeleton {
             false, // is collidable?
             false, // is locomotive?
             l.pivot ?? true,
-            b.larm ?? [0,0],
+            b.farm ?? [0,0],
             l.rot ?? 0,
             l.siz ?? [1,1]
         );
@@ -302,7 +312,7 @@ class WraithSkeleton extends Skeleton {
             false, // is collidable?
             false, // is locomotive?
             r.pivot ?? true,
-            b.rarm ?? [0,0],
+            b.farm ?? [0,0],
             r.rot ?? 0,
             r.siz ?? [1,1]
         );
@@ -324,7 +334,7 @@ class WraithSkeleton extends Skeleton {
             true, // is collidable?
             false, // is locomotive?
             l.pivot ?? true,
-            b.larm ?? [0,0],
+            b.hand ?? [0,0],
             l.rot ?? 0,
             l.siz ?? [1,1]
         );
@@ -346,7 +356,7 @@ class WraithSkeleton extends Skeleton {
             true, // is collidable?
             false, // is locomotive?
             r.pivot ?? true,
-            b.rarm ?? [0,0],
+            b.hand ?? [0,0],
             r.rot ?? 0,
             r.siz ?? [1,1]
         );
