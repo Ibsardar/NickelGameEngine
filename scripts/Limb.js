@@ -39,6 +39,7 @@ class Limb {
 
         // create sprite (or locomotive)
         if (img_data) {
+            this.img_data = img_data;
             this.sprite = new Sprite(scene, img_data, true, null, collidable);
             this.sprite.bound = () => {};
             if (!pivot) this.sprite.set_origin_centered();
@@ -79,6 +80,7 @@ class Limb {
      * on this limb respect to its body (parent limb).
      * If no body, limb is respect to [0,0].
      * Also, if no image has been recorded, record it.
+     * Also, if origin/pivot changed, update the position.
      */
     _check_changes() {
 
@@ -86,13 +88,15 @@ class Limb {
         // - if limb's parent changed or...
         // - if limb's sprite changed or...
         // - if limb's offset from body changed
+        // (4th check only for position check: if limb's sprite's origin changed)
 
         var body_node = this._limb_node.parent;
 
         // set positoin changed flag
         if ((body_node ? body_node.obj._limb_pos_changed : false) ||
             !Nickel.v2d.eq(this.sprite.get_pos(), this._limb_history.pos) ||
-            !Nickel.v2d.eq(this._body_offset.pos, this._offset_history.pos))
+            !Nickel.v2d.eq(this._body_offset.pos, this._offset_history.pos) ||
+            !Nickel.v2d.eq(this.sprite.get_origin(), this._limb_history.pivot))
             this._limb_pos_changed = true;
         else
             this._limb_pos_changed = false;
@@ -117,13 +121,15 @@ class Limb {
         this._limb_history.pos = this.sprite.get_pos();
         this._limb_history.rot = this.sprite.get_rot();
         this._limb_history.siz = this.sprite.get_scale();
+        this._limb_history.pivot = this.sprite.get_origin();
         this._offset_history.pos = Nickel.v2d.copy(this._body_offset.pos);
         this._offset_history.rot = this._body_offset.rot;
         this._offset_history.siz = Nickel.v2d.copy(this._body_offset.siz);
     }
 
     /**
-     * @todo docs
+     * Updates the relative (to self's body/parent) position, rotation, and scale
+     * based onthe results of the _check_changes function.
      */
     _update_limb() {
 
@@ -654,6 +660,7 @@ class Limb {
     set_sprite(scene, img_data, collidable=false, is_loco=false, pivot=false, off_pos=false, off_rot=false, off_siz=false) {
         
         // existing sprite, new image
+        this.img_data = img_data;
         if (this.sprite)
             return this.set_image(img_data, pivot, off_pos, off_rot, off_siz);
 
@@ -678,6 +685,7 @@ class Limb {
      */
     set_image(img_data, origin=false, off_pos=false, off_rot=false, off_siz=false) {
 
+        this.img_data = img_data;
         this.sprite.set_pic(img_data);
         if (origin === true) this.sprite.set_origin_centered();
         else if (origin) this.sprite.set_origin(Nickel.v2d.copy(origin));
@@ -778,6 +786,14 @@ class Limb {
     set offset_scale (siz) { this._body_offset.siz = siz; }
 
     /**
+     * The pivot point of this limb.
+     * 
+     * @type {Number[2]} pivot point of this limb.
+     */
+    get pivot () { return this.sprite.get_origin(); }
+    set pivot (pt) { this.sprite.set_origin(pt); }
+
+    /**
      * Has the limb stopped updating or not.
      * 
      * @type {Boolean} disabled or not.
@@ -796,7 +812,8 @@ class Limb {
     _limb_history = {
         pos : [0,0],
         rot : 0,
-        siz : [1,1]
+        siz : [1,1],
+        pivot : [0,0]
     }
 
     /// (Private) Offsets relative to this limb's body.
@@ -848,6 +865,10 @@ class Limb {
 
     /// Main actor of limb (can be any type of Actor)
     /// Expected to be set when issuing a skeleton (that contins this limb) to an actor
+    /// Or when equipping/unequipping
     actor;
+
+    /// Image data this limb was initialized with.
+    img_data;
 
 }//end Limb

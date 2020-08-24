@@ -18,57 +18,32 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-import { RangedWeapon } from "../RangedWeapon.js";
+import { Weapon } from "../Weapon.js";
 import { GaMa } from "../../managers/GameManager.js";
-import { Bullet } from "../../projectiles/Bullet.js";
 import { DATA } from "../../data_loader2.js";
 
-export { GaussRifle };
+export { WeaponMarker };
 
 /**
- * @class GaussRifle
+ * @class WeaponMarker
  * 
- * GaussRifles is a medium-teir weapon of the Necron.
+ * WeaponMarkers is used for testing.
  */
-class GaussRifle extends RangedWeapon {
+class WeaponMarker extends Weapon {
 
     /**
      * Default constructor.
      */
     constructor(overlap=true) {
 
-        var data = DATA.IMG.NECRON_WEAP_01;
+        var data = DATA.IMG.RED_MARKER;
 
         super(GaMa.scene, data, false, overlap, data);
-    
-        this._projectile_data = {
-            sprite_data: DATA.IMG.NECRON_PROJ_01,
-            group: 'test',
-            maxtime: 3000,
-            health: 999,
-            snd_create: DATA.SND.LASER
-        };
     }
 
     update() {
-
-        for (var i=0; i<this._bullets.length; i++)
-            this._bullets[i].update();
         
         super.update();
     }
-
-    shoot() {
-
-        var b = new Bullet(GaMa.scene, this._projectile_data);
-        b.position = this.sprite.get_right();
-        b.speed = 4;
-        b.direction = this.sprite.get_rot();
-        this._bullets.push(b);
-        return b;
-    }
-
-    /// (Private) List of bullets from this gun
-    _bullets = [];
 
 }//end class

@@ -3,3 +3,9 @@ siz                     : [w,h]     scale of image relative to its parent
 rot                     : degs      rotation of image relative to its parent
 larm                    : [x,y]     joint of left arm on body
 rarm                    : [x,y]     joint of right arm on body
+
+May be applied only if image is a body (root Limb):
+pos                     : [x,y]     initial topleft position
+ctr                     : [x,y]     initial center position
+rot                     : degs      initial cc rotation
+scale                   : [w,h]     initial percentage scale (0=0%,1=100%)

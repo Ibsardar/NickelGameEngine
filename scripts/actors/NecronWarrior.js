@@ -26,6 +26,9 @@ import { GaussRifle } from "../limbs/weapons/GaussRifle.js";
 //import { GuassRifle } from "../weapons/GuassRifle.js";    @todo
 //import { LivingMetal } from "../armors/LivingMetal.js";   @todo
 
+//junk
+import { WeaponMarker } from "../limbs/misc/WeaponMarker.js";
+
 export { NecronWarrior };
 
 /**
@@ -44,18 +47,32 @@ class NecronWarrior extends UnitActor {
     constructor(group, team) {
 
         var humanoid_sk = new HumanoidSkeleton();
-        humanoid_sk.set_images(NecronWarrior.data, true);
-        humanoid_sk.body.sprite.set_scale(4);
+        humanoid_sk.set_images(NecronWarrior.data, 'all', true);
 
         super(GaMa.scene, humanoid_sk, group);
 
+        this.init_body_from_data(NecronWarrior.data);
+
+        var marker = new WeaponMarker();
+        this.equip(marker, 'larm');
+
         var gun = new GaussRifle();
-        this.equip(gun,'rarm');
-        //this.skeleton.part('rarm').enable(); <-- i don't think i need this...
+        this.equip(gun, 'rarm');
+        gun.sprite.flip_v(true);
+
+        var gun2 = new GaussRifle();
+        this.equip(gun2, 'larm');
+
         this._team = team;
     }
-
-    // stuff unique to necron warriors here...
+    
+    /**
+     * Returns body part img data in the format:
+     * 'body' : img_data
+     * 'larm' : img_data
+     * 'rarm' : img_data
+     */
+    get_data = () => NecronWarrior.data;
 
     /// image data for default body parts.
     static data = {

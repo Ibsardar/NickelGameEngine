@@ -116,6 +116,15 @@ class Actor {
             self.trigger('create', self);
         });
     }
+
+    /**
+     * @interface
+     * 
+     * Returns body part img data in the format:
+     * 'body' : img_data
+     * ...
+     */
+    get_data() {}
     
     /**
      * Static function: sets targets (reference) for a certain group.
@@ -497,6 +506,8 @@ class Actor {
                     equipable.remember(old_limb);
                 }
                 var replaced = part.replace(equipable);
+                this.skeleton.set_images(equipable.img_data, part_name, true);
+                equipable.actor = this;
                 this.trigger('unequip', this, replaced);
                 this.trigger('equip', this, equipable);
                 return replaced;
@@ -504,6 +515,8 @@ class Actor {
 
                 equipable.remember(part);
                 part.replace(equipable);
+                this.skeleton.set_images(equipable.img_data, part_name, true);
+                equipable.actor = this;
                 this.trigger('equip', this, equipable);
                 return null;
             }
@@ -513,12 +526,18 @@ class Actor {
             if (part instanceof Equipable) {
 
                 var replaced = part.replace(equipable);
+                this.skeleton.set_images(equipable.img_data, part_name, true);
+                equipable.actor = this;
+                replaced.actor = null;
                 this.trigger('unequip', this, replaced);
                 this.trigger('equip', this, equipable);
                 return replaced;
             } else {
 
-                part.replace(equipable);
+                var replaced = part.replace(equipable);
+                this.skeleton.set_images(equipable.img_data, part_name, true);
+                equipable.actor = this;
+                replaced.actor = null;
                 this.trigger('equip', this, equipable);
                 return null;
             }
@@ -551,21 +570,57 @@ class Actor {
 
             this.skeleton.set_part(part_name, replacement);
             var equipable = part.replace(replacement);
+            this.skeleton.set_images(replacement.img_data, part_name, true);
+            equipable.actor = null;
+            replaced.actor = this;
             this.trigger('unequip', this, equipable);
             return equipable;
         } else if (part.remember()) {
 
             this.skeleton.set_part(part_name, part.remember());
             var equipable = part.replace(part.remember());
+            this.skeleton.set_images(part.remember().img_data, part_name, true);
+            equipable.actor = null;
             this.trigger('unequip', this, equipable);
             return equipable;
         } else {
 
             this.skeleton.set_part(part_name, null);
             var equipable = part.remove();
+            equipable.actor = null;
             this.trigger('unequip', this, equipable);
             return equipable;
         }
+    }
+
+    /**
+     * Set initial attributes specified in a data file
+     * to skeleton body (root Limb).
+     * 
+     * @param {object} data 
+     */
+    init_body_from_data(data) {
+
+        // set initial attributes specified in data file
+        if (data.body.pos)
+            this.skeleton.body.sprite.set_pos(
+                data.body.pos[0] ?? 0,
+                data.body.pos[1] ?? 0
+            );
+        if (data.body.ctr)
+            this.skeleton.body.sprite.set_center(
+                data.body.ctr[0] ?? 0,
+                data.body.ctr[1] ?? 0
+            );
+        if (data.body.rot)
+            this.skeleton.body.sprite.set_rot(
+                data.body.rot ?? 0
+            );
+        if (data.body.scale)
+            this.skeleton.body.sprite.set_scale2(
+                data.body.scale[0] ?? 1,
+                data.body.scale[1] ?? 1
+            );
     }
 
     /**

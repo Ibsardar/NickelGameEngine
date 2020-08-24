@@ -90,6 +90,7 @@ InitGame.does = () => {
     // junk
     //Nickel.GLOBALS.Game = Game;
     Nickel.GLOBALS.akNecron = akNecron;
+    Nickel.GLOBALS.NecWar = NecronWarrior;
     //Nickel.GLOBALS.akTest = akTest;
     //Nickel.GLOBALS.akTest2 = akTest2;
     //Nickel.GLOBALS.Actor = Actor;

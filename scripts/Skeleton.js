@@ -44,6 +44,32 @@ class Skeleton {
     }
 
     /**
+     * @interface
+     * 
+     * Sets a set of image data of the following format:
+     * 'body' : img_data
+     * ...
+     * 
+     * body_part_name can be any of the following:
+     * 'body'
+     * ...
+     * 'all' (applies all of the above) (i.e. unspecified)
+     * 
+     * If set_defaults is true, also set img_data as default data.
+     * 
+     * *Note:* child limbs are ignored if parent limb is missing.
+     * *Note:* if the specified body part(s) are missing, those limbs are disabled.
+     * *Note:* if body_part_name specified AND body_part_name:img_data does not exist,
+     *         body_part_img_data will be read as body_part_name.
+     * 
+     * @param {object} body_part_img_data 
+     * @param {strng} body_part_name 
+     * @param {boolean} set_defaults 
+     */
+    set_images(body_part_img_data, body_part_name='all', set_defaults=false) {}
+
+    /**
+     * @
      * Called once per frame. Updates all changing parameters.
      */
     update() {

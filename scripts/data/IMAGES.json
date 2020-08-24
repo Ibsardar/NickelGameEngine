@@ -3,7 +3,8 @@
     "TANK_01" :                     {"img" : "../images/tank01.png",                    "w" : 21,   "h" : 15},
     "HEALTHBAR_RED" :               {"img" : "../images/ui/bar-red.png",                "w" : 128,  "h" : 8},
     "HEALTHBAR_GREEN" :             {"img" : "../images/ui/bar-green.png",              "w" : 128,  "h" : 8},
-    "NECRON_BODY_01" :              {"img" : "../images/Necron/necron.png",             "w" : 8,    "h" : 9, "siz" : [1,1], "pivot" : [3,5], "larm" : [5,1], "rarm" : [5,8]},
-    "NECRON_WEAP_01" :              {"img" : "../images/Necron/gauss_rifle.png",        "w" : 15,   "h" : 6, "siz" : [1,1], "pivot" : [5,5]},
-    "NECRON_PROJ_01" :              {"img" : "../images/Necron/gauss_ball.png",         "w" : 10,   "h" : 10}
+    "NECRON_BODY_01" :              {"img" : "../images/Necron/necron.png",             "w" : 8,    "h" : 9, "siz" : [1,1], "pivot" : [3,4], "larm" : [1,-4], "rarm" : [1,4], "scale" : [8,8] },
+    "NECRON_WEAP_01" :              {"img" : "../images/Necron/gauss_rifle.png",        "w" : 15,   "h" : 6, "siz" : [1,1], "pivot" : [6,5]},
+    "NECRON_PROJ_01" :              {"img" : "../images/Necron/gauss_ball.png",         "w" : 10,   "h" : 10},
+    "RED_MARKER" :                  {"img" : "../images/marker_red.png",                "w" : 1,    "h" : 1, "siz" : [1,1], "pivot" : [0,0]}
 }

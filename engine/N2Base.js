@@ -3916,7 +3916,7 @@ function SimplePoly(scene, vertices, is_equiangular=false, track_point=null) {
         //--    Returns track point
         //--
 
-        return this.tracker;
+        return [this.tracker[0], this.tracker[1]];
     }
 
     this.set_tracker = function(track_point) {
@@ -4491,7 +4491,7 @@ function SimpleCircle(scene, radius, track_point=null) {
         //--    Returns track point
         //--
 
-        return this.tracker;
+        return [this.tracker[0], this.tracker[1]];
     }
 
     this.set_tracker = function(track_point) {
@@ -6259,7 +6259,7 @@ function Sprite(scene, image_data, has_bbox=true,
         //--    relative to the default topleft corner
         //--
 
-        return this.origin;
+        return [this.origin[0], this.origin[1]];
     }
 
 
@@ -6296,7 +6296,7 @@ function Sprite(scene, image_data, has_bbox=true,
         return this.type;
     }
 
-    this.flip_h = function() {
+    this.flip_h = function(flip_origin=false) {
         //--    Internally, horizontally flips the image.
         //--    Waits until image is loaded if not loaded.
         //--
@@ -6313,6 +6313,12 @@ function Sprite(scene, image_data, has_bbox=true,
             ctx.scale(-1,1);
             ctx.drawImage(i, -w, 0, w, h);
             i.src = c.toDataURL();
+
+            // flip origin if specified
+            if (flip_origin) {
+                var flipped_ox = this.origin[0] - 2 * (this.origin[0] - this.get_w() / 2);
+                this.set_origin([flipped_ox, this.origin[1]]);
+            }
         }
 
         // flip
@@ -6323,7 +6329,7 @@ function Sprite(scene, image_data, has_bbox=true,
         });
     }
 
-    this.flip_v = async function() {
+    this.flip_v = function(flip_origin=false) {
         //--    Internally, vertically flips the image.
         //--    Waits until image is loaded if not loaded.
         //--
@@ -6340,6 +6346,12 @@ function Sprite(scene, image_data, has_bbox=true,
             ctx.scale(1,-1);
             ctx.drawImage(i, 0, -h, w, h);
             i.src = c.toDataURL();
+
+            // flip origin if specified
+            if (flip_origin) {
+                var flipped_oy = this.origin[1] - 2 * (this.origin[1] - this.get_h() / 2);
+                this.set_origin([this.origin[0], flipped_oy]);
+            }
         }
 
         // flip
@@ -6670,19 +6682,19 @@ function Sprite(scene, image_data, has_bbox=true,
         return this.max_rot = degs;
     }
 
-    this.set_origin = function(offset) {
+    this.set_origin = function(point) {
         //--    Set the origin of rotation (pivot)
         //--    relative to the default topleft corner.
         //--    Also update the hull so it appears to
-        //--    not have changed
+        //--    not have changed.
         //--
 
         if (this.hull)
-            this.hull.shape.shift_pos(this.origin[0] - offset[0],
-                                      this.origin[1] - offset[1]);
+            this.hull.shape.shift_pos(this.origin[0] - point[0],
+                                      this.origin[1] - point[1]);
 
-        this.origin[0] = offset[0];
-        this.origin[1] = offset[1];
+        this.origin[0] = point[0];
+        this.origin[1] = point[1];
     }
 
     this.set_origin_centered = function() {
