@@ -3,8 +3,16 @@
     "TANK_01" :                     {"img" : "../images/tank01.png",                    "w" : 21,   "h" : 15},
     "HEALTHBAR_RED" :               {"img" : "../images/ui/bar-red.png",                "w" : 128,  "h" : 8},
     "HEALTHBAR_GREEN" :             {"img" : "../images/ui/bar-green.png",              "w" : 128,  "h" : 8},
-    "NECRON_BODY_01" :              {"img" : "../images/Necron/necron.png",             "w" : 8,    "h" : 9, "siz" : [1,1], "pivot" : [3,4], "larm" : [1,-4], "rarm" : [1,4], "scale" : [8,8] },
-    "NECRON_WEAP_01" :              {"img" : "../images/Necron/gauss_rifle.png",        "w" : 15,   "h" : 6, "siz" : [1,1], "pivot" : [6,5]},
+    "NECRON_BODY_01" :              {"img" : "../images/Necron/necron.png",             "w" : 8,    "h" : 9, "pivot" : [3,4], "larm" : [1,-4], "rarm" : [1,4], "scale" : [8,8]},
+    "NECRON_WEAP_01" :              {"img" : "../images/Necron/gauss_rifle.png",        "w" : 15,   "h" : 6, "pivot" : [6,5]},
     "NECRON_PROJ_01" :              {"img" : "../images/Necron/gauss_ball.png",         "w" : 10,   "h" : 10},
-    "RED_MARKER" :                  {"img" : "../images/marker_red.png",                "w" : 1,    "h" : 1, "siz" : [1,1], "pivot" : [0,0]}
+    
+    "NECRON_BODY_02" :              {"img" : "../images/Necron/wraith.png",             "w" : 7,    "h" : 9, "pivot" : [4,4], "larm" : [0,-4], "rarm" : [0,4], "back" : [-3,0], "scale" : [8,8]},
+    "NECRON_PART_01" :              {"img" : "../images/Necron/wraith_arm.png",         "w" : 6,    "h" : 3, "pivot" : [1,1], "farm" : [5,1]},
+    "NECRON_PART_02" :              {"img" : "../images/Necron/wraith_forearm.png",     "w" : 5,    "h" : 1, "pivot" : [0,0], "hand" : [4,0]},
+    "NECRON_PART_03" :              {"img" : "../images/Necron/wraith_back.png",        "w" : 5,    "h" : 3, "pivot" : [4,1], "tail" : [0,1]},
+    "NECRON_PART_04" :              {"img" : "../images/Necron/wraith_tail.png",        "w" : 5,    "h" : 3, "pivot" : [4,1]},
+    "NECRON_WEAP_02" :              {"img" : "../images/Necron/wraith_claw.png",        "w" : 5,    "h" : 3, "pivot" : [0,1]},
+
+    "RED_MARKER" :                  {"img" : "../images/marker_red.png",                "w" : 1,    "h" : 1, "pivot" : [0,0]}
 }

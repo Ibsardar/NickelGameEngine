@@ -26,9 +26,6 @@ import { GaussRifle } from "../limbs/weapons/GaussRifle.js";
 //import { GuassRifle } from "../weapons/GuassRifle.js";    @todo
 //import { LivingMetal } from "../armors/LivingMetal.js";   @todo
 
-//junk
-import { WeaponMarker } from "../limbs/misc/WeaponMarker.js";
-
 export { NecronWarrior };
 
 /**
@@ -53,15 +50,9 @@ class NecronWarrior extends UnitActor {
 
         this.init_body_from_data(NecronWarrior.data);
 
-        var marker = new WeaponMarker();
-        this.equip(marker, 'larm');
-
         var gun = new GaussRifle();
         this.equip(gun, 'rarm');
         gun.sprite.flip_v(true);
-
-        var gun2 = new GaussRifle();
-        this.equip(gun2, 'larm');
 
         this._team = team;
     }

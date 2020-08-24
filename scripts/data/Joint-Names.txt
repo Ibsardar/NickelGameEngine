@@ -3,6 +3,10 @@ siz                     : [w,h]     scale of image relative to its parent
 rot                     : degs      rotation of image relative to its parent
 larm                    : [x,y]     joint of left arm on body
 rarm                    : [x,y]     joint of right arm on body
+farm                    : [x,y]     joint of forearm on left/right arm
+hand                    : [x,y]     joint of hand on forearm
+back                    : [x,y]     joint of back on body
+tail                    : [x,y]     joint of tail on back
 
 May be applied only if image is a body (root Limb):
 pos                     : [x,y]     initial topleft position

@@ -31,6 +31,7 @@ import { Actor } from '../scripts/Actor.js';
 import { NecronWarrior } from '../scripts/actors/NecronWarrior.js';
 import { Bullet } from '../scripts/projectiles/Bullet.js';
 import { GameManager } from '../scripts/managers/GameManager.js';
+import { NecronWraith } from '../scripts/actors/NecronWraith.js';
 
 // Set FPS:
 Game.set_fps(60); // 60 is best
@@ -42,6 +43,7 @@ var skTest;
 var akTest;
 var akTest2;
 var akNecron;
+var akWraith;
 
 // Initialize Game Components
 InitGame.does = () => {
@@ -87,10 +89,13 @@ InitGame.does = () => {
     akNecron = new NecronWarrior('necrons', 'A');
     akNecron.position = [75,175];
 
+    akWraith = new NecronWraith('necrons', 'A');
+    akNecron.position = [200,200];
+
     // junk
     //Nickel.GLOBALS.Game = Game;
     Nickel.GLOBALS.akNecron = akNecron;
-    Nickel.GLOBALS.NecWar = NecronWarrior;
+    Nickel.GLOBALS.akWraith = akWraith;
     //Nickel.GLOBALS.akTest = akTest;
     //Nickel.GLOBALS.akTest2 = akTest2;
     //Nickel.GLOBALS.Actor = Actor;
@@ -105,6 +110,7 @@ GameLoop.does = () => {
     //akTest.update();
     //akTest2.update();
     akNecron.update();
+    akWraith.update();
 
     Actor.handle_triggers(); // should be taken care of in GameManager
     Bullet.handle_triggers(); // should be taken care of in GameManager
