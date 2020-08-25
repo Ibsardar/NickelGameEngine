@@ -69,6 +69,80 @@ class Skeleton {
     set_images(body_part_img_data, body_part_name='all', set_defaults=false) {}
 
     /**
+     * Static helper function for set_images.
+     * (Makes creating new skeletons much easier)
+     * 
+     * mapping expects an n-depth tree: {
+     *      limb_name : {
+     *          jt : [set this to 'pos' for default behaviour] 'joint-name-in-parent-limb-that-this-limb-attaches-to',
+     *          co : is this limb collidable?,
+     *          lo : is this limb a locomotive?
+     *          (sub) limb_name : {...etc},
+     *          (sub) limb_name : {...etc},
+     *          (sub) limb_name : {...etc},
+     *          ...etc
+     *      }
+     * }
+     * 
+     * @param {object} body_part_img_data 
+     * @param {string} body_part_name 
+     * @param {boolean} set_defaults 
+     * @param {Skeleton} skel 
+     * @param {object} mapping 
+     */
+    static _set_images(body_part_img_data, body_part_name, set_defaults, skel, mapping) {
+
+        // helpers
+        // Lingo used in helpers:
+        // - p : part
+        // - pn : part name
+        // - pp : parent part
+        // - ppn : parent part name
+        var _prepare = (pn) => {
+            if (body_part_name == pn && !body_part_img_data[pn])
+                return body_part_img_data;
+            else
+                return body_part_img_data[pn];
+        }
+        var _set = (p, pn, ppn) => {
+            if (body_part_name == pn || body_part_name == 'all') {
+                var prepared = _prepare(pn);
+                if (prepared) {
+                    skel.part(pn).enable();
+                    var parent = ppn ? skel.part(ppn).img_data : prepared;
+                    skel.part(pn).set_sprite(
+                        Skeleton._scene,
+                        prepared,
+                        p.co, // is collidable?
+                        p.lo, // is locomotive?
+                        prepared.pivot ?? true,
+                        parent[p.jt] ?? [0,0],
+                        prepared.rot ?? 0,
+                        prepared.siz ?? [1,1]
+                    );
+                    if (set_defaults) skel.part(pn).set_default();
+                } else {
+                    skel.part(pn).disable();
+                    return false;
+                }
+            }
+            return true;
+        }
+        var _set_all = (pp, ppn=null) => {
+            for (var pn in pp) {
+                var p = pp[pn];
+                if (pn != 'jt' && pn != 'co' && pn != 'lo') {
+                    var result = _set(p, pn, ppn);
+                    if (result) _set_all(p, pn);
+                }
+            }
+        }
+        
+        // run with helpers
+        _set_all(mapping);
+    }
+
+    /**
      * @
      * Called once per frame. Updates all changing parameters.
      */

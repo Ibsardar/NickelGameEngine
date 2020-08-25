@@ -86,15 +86,15 @@ InitGame.does = () => {
 
     //Actor.delete_group('test-1');
 
-    //akNecron = new NecronWarrior('necrons', 'A');
-    //akNecron.position = [75,175];
+    akNecron = new NecronWarrior('necrons', 'A');
+    akNecron.position = [75,175];
 
     akWraith = new NecronWraith('necrons', 'A');
     akWraith.position = [200,200];
 
     // junk
     //Nickel.GLOBALS.Game = Game;
-    //Nickel.GLOBALS.akNecron = akNecron;
+    Nickel.GLOBALS.akNecron = akNecron;
     Nickel.GLOBALS.akWraith = akWraith;
     //Nickel.GLOBALS.akTest = akTest;
     //Nickel.GLOBALS.akTest2 = akTest2;
@@ -109,7 +109,7 @@ GameLoop.does = () => {
 
     //akTest.update();
     //akTest2.update();
-    //akNecron.update();
+    akNecron.update();
     akWraith.update();
 
     Actor.handle_triggers(); // should be taken care of in GameManager
