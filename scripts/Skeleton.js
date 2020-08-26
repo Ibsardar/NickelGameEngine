@@ -244,6 +244,14 @@ class Skeleton {
     get position() { return this._root.sprite.get_center(); }
     set position(p) { this._root.sprite.set_center(p[0], p[1]); }
 
+    /**
+     * Degrees of root's sprite's rotation.
+     * 
+     * @type {Number} degrees
+     */
+    get rotation() { return this._root.sprite.get_rot(); }
+    set rotation(degs) { this._root.sprite.set_rot(degs); }
+
     /// (Private Static) Viewport of all instances.
     static _scene;
 

@@ -282,6 +282,16 @@ class Fire extends GlowPBS {
     }
 
     /**
+     * Static function: Triggers events based on current state of particles.
+     * Must be called at regular intervals (ex: 60 times per second i.e. 60fps).
+     */
+    static handle_triggers() {
+
+        // handle Fire-specific triggers
+        // ...
+    }
+
+    /**
      * Rescales a number from its current limits to
      * another set of limits i.e. normalization.
      * 

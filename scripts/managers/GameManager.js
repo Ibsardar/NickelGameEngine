@@ -19,6 +19,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 import { Skeleton } from "../Skeleton.js";
+import { Projectile } from "../projectiles/Projectile.js";
+import { ParticleBulletSystem } from "../projectiles/ParticleBulletSystem.js";
+import { GlowPBS } from "../projectiles/GlowPBS.js";
 
 export { GameManager, GameManager as GaMa }; // also export an alias
 
@@ -35,10 +38,66 @@ class GameManager {
     // Viewport of the game
     static scene;
 
+    // max # of projectiles per group until garbage
+    // collection deletes all dead projectiles
+    static max_projectiles_per_group_until_gc;
+
+    // max # of particles per group until garbage
+    // collection deletes all dead particles
+    static max_particles_per_group_until_gc;
+
+    // if true, triggers delete events
+    static trigger_delete_events_flag;
+
+    /**
+     * Sets the scene.
+     * Sets flags to default values.
+     * 
+     * @param {Viewport} scene Main game
+     */
     static init(scene) {
 
         GameManager.scene = scene;
         Skeleton._scene = scene;
+
+        GameManager.max_projectiles_per_group_until_gc = 500;
+        GameManager.max_particles_per_group_until_gc = 1000;
+        GameManager.trigger_delete_events_flag = true;
+    }
+
+    /**
+     * Runs handles for every base class that has handles.
+     * Runs garbage collection.
+     */
+    static handle() {
+
+        // actors
+        Actor.handle_triggers();
+
+        // projectiles
+        Projectile.handle_triggers();
+        Bullet.handle_triggers();
+        StickyBullet.handle_triggers();
+        SmartBullet.handle_triggers();
+
+        // particles
+        ParticleBulletSystem.handle_triggers();
+        GlowPBS.handle_triggers();
+        Fire.handle_triggers();
+
+        GameManager.garbage_collection();
+    }
+
+    /**
+     * Collects garbage i.e. remove dead things.
+     */
+    static garbage_collection() {
+
+        if (Projectile.count >= Projectile.group_count * GameManager.max_projectiles_per_group_until_gc)
+            SmartBullet.delete_destroyed(GameManager.trigger_delete_events_flag);
+
+        if (ParticleBulletSystem.particle_count >= ParticleBulletSystem * GameManager.max_particles_per_group_until_gc)
+            ParticleBulletSystem.delete_destroyed(GameManager.trigger_delete_events_flag);
     }
 
 }//end class

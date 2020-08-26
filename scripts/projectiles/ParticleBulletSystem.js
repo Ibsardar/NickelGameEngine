@@ -533,6 +533,17 @@ class ParticleBulletSystem {
             c += g.length;
         return c;
     }
+    
+    /**
+     * Number of groups.
+     * (excludes deleted)
+     * 
+     * @type {Number} group count
+     */
+    static get group_count() {
+
+        return ParticleBulletSystem._systems.length;
+    }
 
     /**
      * Called once per frame. Updates all changing parameters.

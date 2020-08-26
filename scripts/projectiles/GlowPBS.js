@@ -107,6 +107,16 @@ class GlowPBS extends ParticleBulletSystem {
     }
 
     /**
+     * Static function: Triggers events based on current state of particles.
+     * Must be called at regular intervals (ex: 60 times per second i.e. 60fps).
+     */
+    static handle_triggers() {
+
+        // handle GlowPBS-specific triggers
+        // ...
+    }
+
+    /**
      * Private Static function: Adds a radial glow on all particles in
      * the given system.
      * * note: will not overwite previous glow effect, rather adds 

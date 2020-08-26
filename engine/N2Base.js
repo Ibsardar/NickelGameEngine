@@ -3916,7 +3916,10 @@ function SimplePoly(scene, vertices, is_equiangular=false, track_point=null) {
         //--    Returns track point
         //--
 
-        return [this.tracker[0], this.tracker[1]];
+        if (this.tracker)
+            return [this.tracker[0], this.tracker[1]];
+        else
+            return this.tracker;
     }
 
     this.set_tracker = function(track_point) {
@@ -4491,7 +4494,10 @@ function SimpleCircle(scene, radius, track_point=null) {
         //--    Returns track point
         //--
 
-        return [this.tracker[0], this.tracker[1]];
+        if (this.tracker)
+            return [this.tracker[0], this.tracker[1]];
+        else
+            return this.tracker;
     }
 
     this.set_tracker = function(track_point) {

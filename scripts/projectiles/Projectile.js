@@ -347,10 +347,23 @@ class Projectile {
      * @type {Number} projectile count
      */
     static get count() {
+
         var c = 0;
         for (var g in Projectile._projectiles)
             c += Projectile._projectiles[g].length;
+            
         return c;
+    }
+    
+    /**
+     * Static property: Number of groups.
+     * (excludes deleted)
+     * 
+     * @type {Number} group count
+     */
+    static get group_count() {
+
+        return Projectile._projectiles.length;
     }
 
     /**

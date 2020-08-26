@@ -137,6 +137,16 @@ class Bullet extends Projectile {
     }
 
     /**
+     * Static function: Triggers events based on current state of bullets.
+     * Must be called at regular intervals (ex: 60 times per second i.e. 60fps).
+     */
+    static handle_triggers() {
+
+        // handle Bullet-specific triggers
+        // ...
+    }
+
+    /**
      * Static function: removes all targets, projectiles, and their
      * quadtree for a certian group. Does not trigger delete event by
      * default. Does not internally destroy projectiles by default.

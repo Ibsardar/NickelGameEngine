@@ -49,6 +49,8 @@ var akWraith;
 InitGame.does = () => {
 
     GameManager.init(Game);
+    GameManager.max_projectiles_per_group_until_gc = 20;
+    GameManager.max_particles_per_group_until_gc = 100;
 
     // lBody = new Limb(Game, DATA.IMG.CREEP_01, true, 'above', {}) // body
     //         .attach(new Limb(Game, DATA.IMG.HEALTHBAR_RED, true, 'below', {pos:[0,4], rot:-45}, [0,0]) // arm
@@ -87,10 +89,12 @@ InitGame.does = () => {
     //Actor.delete_group('test-1');
 
     akNecron = new NecronWarrior('necrons', 'A');
-    akNecron.position = [75,175];
+    akNecron.position = [75,375];
+    akNecron.rotation = 45;
 
-    akWraith = new NecronWraith('necrons', 'A');
-    akWraith.position = [200,200];
+    akWraith = new NecronWraith('necrons', 'B');
+    akWraith.position = [400,175];
+    akWraith.rotation = 220;
 
     // junk
     //Nickel.GLOBALS.Game = Game;
@@ -112,8 +116,10 @@ GameLoop.does = () => {
     akNecron.update();
     akWraith.update();
 
-    Actor.handle_triggers(); // should be taken care of in GameManager
-    Bullet.handle_triggers(); // should be taken care of in GameManager
+    // TODO: @todo
+    // figure out how to efficiently, user-friendly-ly update bullets and delete them when necessary
+
+    GameManager.handle();
 }
 
 // Start Game:

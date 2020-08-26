@@ -631,6 +631,14 @@ class Actor {
     get position() { return this.skeleton.position }
     set position(p) { this.skeleton.position = p; }
 
+    /**
+     * Degrees of actors' body's rotation.
+     * 
+     * @type {Number} degrees
+     */
+    get rotation() { return this.skeleton.rotation }
+    set rotation(degs) { this.skeleton.rotation = degs; }
+
     /// (Static Constant) Actor states.
     static get WAITING_INIT ()  { return 0; }
     static get INITIALIZED  ()  { return 1; }
