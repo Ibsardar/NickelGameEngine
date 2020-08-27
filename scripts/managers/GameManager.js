@@ -49,6 +49,9 @@ class GameManager {
     // if true, triggers delete events
     static trigger_delete_events_flag;
 
+    // list of groups to be updated
+    static active_group_name_list = [];
+
     /**
      * Sets the scene.
      * Sets flags to default values.
@@ -85,7 +88,20 @@ class GameManager {
         GlowPBS.handle_triggers();
         Fire.handle_triggers();
 
+        // clean up
         GameManager.garbage_collection();
+
+        // update
+        GameManager.update();
+    }
+
+    /**
+     * Updates particles, projectiles, actors, etc... via static groups
+     */
+    static update() {
+
+        // projectiles
+        // HERE...
     }
 
     /**

@@ -172,7 +172,7 @@ class Projectile {
     /**
      * Static function: removes all destroyed projectiles. Does
      * not remove empty groups. Does not trigger delete event by
-     * default.
+     * default. DOES remove false indices in lists.
      * 
      * @param {Boolean} [trigger=false] trigger delete events
      */
@@ -185,6 +185,7 @@ class Projectile {
         for (var g in ps) {
             if (trigger) {
                 ps[g] = ps[g].filter(function(p){
+                    if (!p) return false;
                     if (p._state == Projectile.DESTROYED) {
                         p.trigger('delete', p);
                         return false;
@@ -193,7 +194,7 @@ class Projectile {
                 });
             } else {
                 ps[g] = ps[g].filter(p =>
-                    p._state != Projectile.DESTROYED
+                    p && p._state != Projectile.DESTROYED
                 );
             }
         }
@@ -327,6 +328,40 @@ class Projectile {
     static _handle_delete_triggers() {
 
         //...override
+    }
+
+    /**
+     * Static function: Transfers a projectile from its existing group to a new group.
+     * (includes destroyed, excludes deleted)
+     * 
+     * @param  {Projectile} p projectile object that wants to change group
+     * @param  {String} g group to change to
+     */
+    static change_group(p, g) {
+        
+        Projectile.remove_from_group(p);
+        if (!Projectile._projectiles[g])
+            Projectile._projectiles[g] = [];
+        Projectile._projectiles[g].push(p);
+    }
+
+    /**
+     * Static function: Removes a projectile from its existing group.
+     * (includes destroyed, excludes deleted)
+     * 
+     * @param  {Projectile} p projectile object that wants to change group
+     */
+    static remove_from_group(p) {
+        
+        var oldg = p.group;
+        p.group = null;
+        for (var i in Projectile._projectiles[oldg]) {
+            var oldp = Projectile._projectiles[oldg][i];
+            if (oldp.sprite.id == p.sprite.id) {
+                Projectile._projectiles[oldg][i] = null;
+                break;
+            }
+        }
     }
 
     /**
@@ -588,7 +623,7 @@ class Projectile {
     /// Main sprite object of bullet.
     sprite;
 
-    /// Group this bullet belongs to.
+    /// Group this projectile belongs to.
     group;
 
     /// Combat variables
