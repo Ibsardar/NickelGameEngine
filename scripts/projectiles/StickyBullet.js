@@ -182,8 +182,8 @@ class StickyBullet extends Bullet {
     }
 
     /**
-     * Static function: removes all destroyed projectiles. Does
-     * not remove empty groups. Does not trigger delete event by
+     * Static function: removes all destroyed projectiles. Also
+     * removes empty groups. Does not trigger delete event by
      * default.
      * * note: also applies parent class deletions
      * 
@@ -196,8 +196,15 @@ class StickyBullet extends Bullet {
 
         // delete from this class
         var ps = StickyBullet._p_stickies;
+
+        // remove empty groups
+        for (var i in ps) 
+            if (!ps[i] || !ps[i].length)
+                delete ps[i];
+        
+        // remove dead objects
         for (var g in ps)
-            ps[g] = ps[g].filter(p => p._state != StickyBullet.DESTROYED);
+            ps[g] = ps[g].filter(p => p && p._state != StickyBullet.DESTROYED);
     }
     
     /**

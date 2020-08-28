@@ -730,6 +730,38 @@ class Limb {
     }
 
     /**
+     * Returns this limb's and all its child limbs by group
+     * in an object of the format:
+     *      groups = {
+     *          'group-a' : [...list of Limbs...],
+     *          'group-b' : [...list of Limbs...],
+     *          etc...
+     *      }
+     * 
+     * * note: if a Limb has a falsey group, the Limb will not be added
+     * 
+     * @param {object} groups 
+     * @returns {object} grouped Limbs
+     */
+    get_grouped_limbs(groups={}) {
+
+        // collect
+        if (this._group) {
+            if (groups[this._group])
+                groups[this._group].push(this);
+            else
+                groups[this._group] = [this];
+        }
+
+        // children
+        for (let child_node of this._limb_node.children)
+            child_node.obj.get_grouped_limbs(groups);
+
+        // return
+        return groups;
+    }
+
+    /**
      * The parent limb_node of this limb, otherwise known as
      * the node of the body containing this limb.
      * 
@@ -744,6 +776,14 @@ class Limb {
      * @type {TreeNode} contains the parent Limb object
      */
     get body () { return this._limb_node.parent ? this._limb_node.parent.obj : null; }
+
+    /**
+     * The collision group this limb belongs to.
+     * 
+     * @type {String} group name
+     */
+    get group () { return this._group; }
+    set group (name) { this._group = name; }
 
     /**
      * Wether this limb will overlap its parent or not.
@@ -856,6 +896,9 @@ class Limb {
         rot : true,
         siz : true
     };
+
+    /// (Private) Used for collision checking in Actor via Skeleton.
+    _group;
 
     /// id of object
     id = Nickel.UTILITY.assign_id();

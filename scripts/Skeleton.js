@@ -222,6 +222,22 @@ class Skeleton {
     }
 
     /**
+     * Returns Limbs that have been assigned a group
+     * as an object in the format:
+     *      groups = {
+     *          'group-a' : [...list of Limbs...],
+     *          'group-b' : [...list of Limbs...],
+     *          etc...
+     *      }
+     * 
+     * @returns {object} grouped limbs
+     */
+    get_grouped_limbs() {
+
+        return this._root.get_grouped_limbs();
+    }
+
+    /**
      * Root limb of skeleton.
      * 
      * @type {Limb} limb

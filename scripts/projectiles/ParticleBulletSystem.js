@@ -211,23 +211,31 @@ class ParticleBulletSystem {
     }
 
     /**
-     * Static function: removes all destroyed systems. Does
-     * not remove empty groups. Does not trigger delete event by
+     * Static function: removes all destroyed systems. Also
+     * removes empty groups. Does not trigger delete event by
      * default.
      * 
      * @param {Boolean} [trigger=false] trigger delete events
      */
     static delete_destroyed(trigger=false) {
 
+        
+        var ps = ParticleBulletSystem._systems;
+
+        // remove empty groups
+        for (var i in ps) 
+            if (!ps[i] || !ps[i].length)
+                delete ps[i];
+
         // for each destroyed system in every group:
         // - trigger delete if trigger=true
         // - remove from list
-        var ps = ParticleBulletSystem._systems;
         for (var g in ps) {
 
             // if we want to trigger events
             if (trigger) {
                 ps[g] = ps[g].filter(function(sys) {
+                    if (!sys) return false;
                     if (sys._state == ParticleBulletSystem.DESTROYED) {
                         var ptcs = sys._ps.queue.data();
                         for (let ptc of ptcs)
@@ -240,7 +248,7 @@ class ParticleBulletSystem {
             // if we don't want to trigger events
             } else {
                 ps[g] = ps[g].filter(sys =>
-                    sys._state != ParticleBulletSystem.DESTROYED
+                    sys && sys._state != ParticleBulletSystem.DESTROYED
                 );
             }
         }
@@ -474,6 +482,40 @@ class ParticleBulletSystem {
     }
 
     /**
+     * Static function: Transfers a system from its existing group to a new group.
+     * (includes destroyed, excludes deleted)
+     * 
+     * @param  {ParticleBulletSystem} p system object that wants to change group
+     * @param  {String} g group to change to
+     */
+    static change_group(p, g) {
+        
+        ParticleBulletSystem.remove_from_group(p);
+        if (!ParticleBulletSystem._systems[g])
+            ParticleBulletSystem._systems[g] = [];
+        ParticleBulletSystem._systems[g].push(p);
+    }
+
+    /**
+     * Static function: Removes a system from its existing group.
+     * (includes destroyed, excludes deleted)
+     * 
+     * @param  {ParticleBulletSystem} p system object that wants to change group
+     */
+    static remove_from_group(p) {
+        
+        var oldg = p.group;
+        p.group = null;
+        for (var i in ParticleBulletSystem._systems[oldg]) {
+            var oldp = ParticleBulletSystem._systems[oldg][i];
+            if (oldp.sprite.id == p.sprite.id) {
+                ParticleBulletSystem._systems[oldg][i] = null;
+                break;
+            }
+        }
+    }
+
+    /**
      * Static function: Get entire list of systems from a certain group.
      * (includes destroyed, excludes deleted)
      * 
@@ -543,6 +585,24 @@ class ParticleBulletSystem {
     static get group_count() {
 
         return ParticleBulletSystem._systems.length;
+    }
+
+    /**
+     * Static: Calls 'update' on all particle bullet systems.
+     * (excludes deleted, optionally includes destroyed)
+     */
+    static update_all(update_destroyed=false) {
+
+        for (var h in ParticleBulletSystem._systems) {
+            var g = ParticleBulletSystem._systems[h];
+            for (var i in g) {
+                var s = g[i];
+                if (s) {
+                    if (s._state != ParticleBulletSystem.DESTROYED || update_destroyed)
+                        s.update();
+                }
+            }
+        }
     }
 
     /**

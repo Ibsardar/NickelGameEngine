@@ -84,12 +84,6 @@ class Actor {
         else
             Actor._actors[adata.group] = [this];
 
-        // add limbs
-        if (Actor._limbs[adata.group])
-            Actor._limbs[adata.group].push(...this.skeleton.limbs);
-        else
-            Actor._limbs[adata.group] = this.skeleton.limbs;
-
         // init group's QT
         if (!Actor._quadtrees[adata.group]) {
             
@@ -125,6 +119,8 @@ class Actor {
      * ...
      */
     get_data() {}
+
+    static 
     
     /**
      * Static function: sets targets (reference) for a certain group.
@@ -158,33 +154,32 @@ class Actor {
 
         delete Actor._targets[group];
         delete Actor._actors[group];
-        delete Actor._limbs[group];
         delete Actor._quadtrees[group];
     }
 
     /**
-     * Static function: removes all destroyed limbs. Does
-     * not remove empty groups. Does not trigger delete event by
+     * Static function: removes all destroyed actors. Also
+     * removes empty groups. Does not trigger delete event by
      * default.
      * 
      * @param {Boolean} [trigger=false] trigger delete events
      */
     static delete_destroyed(trigger=false) {
 
-        // filter out dead limbs
-        var ls = Actor._limbs;
-        for (var g in ls) {
-            ls[g] = ls[g].filter(l =>
-                !l.sprite.is_destroyed()
-            );
-        }
-
         ls = Actor._actors;
+
+        // remove empty groups
+        for (var i in ls) 
+            if (!ls[i] || !ls[i].length)
+                delete ls[i];
+
+        // remove dead actors
         for (var g in ls) {
 
             // filter out dead actors and trigger event
             if (trigger) {
                 ls[g] = ls[g].filter(actor => {
+                    if (!actor) return false;
                     if (actor._state == Actor.DESTROYED) {
                         actor.trigger('delete', actor);
                         return false;
@@ -195,7 +190,7 @@ class Actor {
             // filter out dead actors only
             } else {
                 ls[g] = ls[g].filter(actor =>
-                    actor._state != Actor.DESTROYED
+                    actor && actor._state != Actor.DESTROYED
                 );
             }
         }
@@ -229,11 +224,24 @@ class Actor {
      * Private Static function: Triggers 'hit' when actors hit a target.
      */
     static _handle_hit_triggers() {
+
+        // TODO: make this more efficient (maybe store the collected and only update when a change flag is true per actor?)
+        // collect all collidable limbs by group
+        var ls = {};
+        for (let a of Actor._actors) {
+            var a_gs = a.skeleton.get_grouped_limbs();
+            for (var key in a_gs) {
+                if (ls[key])
+                    ls[key] = [...ls[key], a_gs[key]];
+                else
+                    ls[key] = a_gs[key];
+            }
+        }
         
         // begin collision checking by preparing qaudtrees:
         // clear & fill all quadtrees with limbs of same group
         // * note: ignore all destroyed limbs *
-        var ls = Actor._limbs;
+        // * note: ignore all non-collidable limbs (specified by skeleton) *
         var qs = Actor._quadtrees;
         for (var g in qs) {
             qs[g].clear();
@@ -241,6 +249,7 @@ class Actor {
                 var limb = ls[g][i];
                 if (!limb.disabled) {
                     if (limb.sprite && !limb.sprite.is_destroyed()) {
+                        // TODO: check here if sprite is collidable...
                         qs[g].in(limb,
                             [limb.sprite.get_left(), limb.sprite.get_top()],
                             [limb.sprite.get_w_bound(), limb.sprite.get_h_bound()]
@@ -287,14 +296,37 @@ class Actor {
     }
 
     /**
-     * Static function: Get entire list of limbs from a certain group.
+     * Static function: Transfers an actor from its existing group to a new group.
      * (includes destroyed, excludes deleted)
      * 
-     * @param  {String} g group name
-     * @return {Limb[]} list of limbs
+     * @param  {Actor} a actor object that wants to change group
+     * @param  {String} g group to change to
      */
-    static get_group_limbs(g) {
-        return Actor._limbs[g];
+    static change_group(a, g) {
+        
+        Actor.remove_from_group(a);
+        if (!Actor._actors[g])
+            Actor._actors[g] = [];
+        Actor._actors[g].push(a);
+    }
+
+    /**
+     * Static function: Removes an actor from its existing group.
+     * (includes destroyed, excludes deleted)
+     * 
+     * @param  {Actor} a actor object that wants to change group
+     */
+    static remove_from_group(a) {
+        
+        var oldg = a.group;
+        a.group = null;
+        for (var i in Actor._actors[oldg]) {
+            var olda = Actor._actors[oldg][i];
+            if (olda.sprite.id == a.sprite.id) {
+                Actor._actors[oldg][i] = null;
+                break;
+            }
+        }
     }
 
     /**
@@ -304,21 +336,8 @@ class Actor {
      * @param  {String} g group name
      * @return {Actor[]} list of actors
      */
-    static get_group_actors(g) {
+    static get_group(g) {
         return Actor._actors[g];
-    }
-    
-    /**
-     * Static property: Number of limbs.
-     * (includes destroyed, excludes deleted)
-     * 
-     * @type {Number} limb count
-     */
-    static get count_limbs() {
-        var c = 0;
-        for (var g in Actor._limbs)
-            c += Actor._limbs[g].length;
-        return c;
     }
     
     /**
@@ -327,11 +346,28 @@ class Actor {
      * 
      * @type {Number} limb count
      */
-    static get count_actors() {
+    static get count() {
         var c = 0;
         for (var g in Actor._actors)
             c += Actor._actors[g].length;
         return c;
+    }
+
+    /**
+     * Static: Calls 'update' on all actors.
+     * (excludes deleted, excludes destroyed)
+     */
+    static update_all() {
+
+        for (var h in Actor._actors) {
+            var g = Actor._actors[h];
+            for (var i in g) {
+                var a = g[i];
+                if (a) {
+                    a.update();
+                }
+            }
+        }
     }
 
     /**
@@ -665,15 +701,6 @@ class Actor {
     ///       ...etc
     ///     }
     static _actors = {};
-
-    /// (Private Static) Table object of grouped limbs.
-    /// *note: Limbs checked for collision seperately
-    /// Format:
-    ///     { 'group1' : [list of limbs]
-    ///       'group2' : [another list of limbs]
-    ///       ...etc
-    ///     }
-    static _limbs = {};
 
     /// (Private Static) Table of quadtrees of grouped limbs.
     /// Format:

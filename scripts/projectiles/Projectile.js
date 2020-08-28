@@ -20,6 +20,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+import { CollisionEventHandler } from "../CollisionEventHandler";
+
 export { Projectile };
 
 /**
@@ -170,18 +172,24 @@ class Projectile {
     }
 
     /**
-     * Static function: removes all destroyed projectiles. Does
-     * not remove empty groups. Does not trigger delete event by
+     * Static function: removes all destroyed projectiles. Also
+     * removes empty groups. Does not trigger delete event by
      * default. DOES remove false indices in lists.
      * 
      * @param {Boolean} [trigger=false] trigger delete events
      */
     static delete_destroyed(trigger=false) {
 
+        var ps = Projectile._projectiles;
+
+        // remove empty groups
+        for (var i in ps) 
+            if (!ps[i] || !ps[i].length)
+                delete ps[i];
+
         // for each destroyed projectile in all groups:
         // - trigger delete if trigger=true
         // - remove from list
-        var ps = Projectile._projectiles;
         for (var g in ps) {
             if (trigger) {
                 ps[g] = ps[g].filter(function(p){
@@ -255,6 +263,11 @@ class Projectile {
 
         // check if projectiles are hitting targets from same group
         // * note: ignore all destroyed targets *
+        CollisionEventHandler.handle(Projectile, Projectile._targets, qs, ['sprite'], []);
+
+        /***
+        // check if projectiles are hitting targets from same group
+        // * note: ignore all destroyed targets *
         var ts = Projectile._targets;
         for (var g in ts) {
             for (var i in ts[g]) {
@@ -300,7 +313,7 @@ class Projectile {
                         qt_list[j].entity.trigger('hit', qt_list[j].entity, t);
                 }
             }
-        }
+        }***/
     }
 
     /**
@@ -399,6 +412,24 @@ class Projectile {
     static get group_count() {
 
         return Projectile._projectiles.length;
+    }
+
+    /**
+     * Static: Calls 'update' on all projectiles.
+     * (excludes deleted, optionally includes destroyed)
+     */
+    static update_all(update_destroyed=false) {
+
+        for (var h in Projectile._projectiles) {
+            var g = Projectile._projectiles[h];
+            for (var i in g) {
+                var p = g[i];
+                if (p) {
+                    if (p._state != Projectile.DESTROYED || update_destroyed)
+                        p.update();
+                }
+            }
+        }
     }
 
     /**

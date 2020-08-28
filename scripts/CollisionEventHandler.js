@@ -40,18 +40,18 @@ class CollisionEventHandler {
      * Handles collision events of various classes.
      * 
      * @param {Function} class_t Class type for determining how to handle events
-     * @param {Object[][]} groups dictionary of grouped targets
-     * @param {QuadTree} tree filled-up quadtree
-     * @param {Object[]} sprite_struct additional structure holding the sprite
+     * @param {Array[]} targets dictionary of grouped targets
+     * @param {QuadTree} trees dictionary of filled-up quadtrees
+     * @param {Object[]} collider_struct additional structure holding the sprite
      * @param {Object[]} trigger_struct additional structure holding the triggerable object
      * @param {String} name name of the event that is being triggered
      */
-    static handle(class_t, groups, tree, collider_struct=[], trigger_struct=[], name='hit') {
+    static handle(class_t, targets, trees, collider_struct=[], trigger_struct=[], name='hit') {
 
         if (class_t === ParticleBulletSystem)
-            CollisionEventHandler._handle_particles(groups, tree, collider_struct, trigger_struct, name);
+            CollisionEventHandler._handle_particles(targets, trees, collider_struct, trigger_struct, name);
         else
-            CollisionEventHandler._handle_general(groups, tree, collider_struct, trigger_struct, name);
+            CollisionEventHandler._handle_general(targets, trees, collider_struct, trigger_struct, name);
     }
 
     /**
@@ -63,12 +63,12 @@ class CollisionEventHandler {
      * triggerable: [] ===> ...entity...
      * 
      * @param {Array[]} groups dictionary of grouped targets
-     * @param {QuadTree} tree filled-up quadtree
-     * @param {Object[]} sprite_struct additional structure holding the sprite
+     * @param {Array[]} trees dictionary of filled-up quadtrees
+     * @param {Object[]} collider_struct additional structure holding the sprite
      * @param {Object[]} trigger_struct additional structure holding the triggerable object
      * @param {String} name name of the event that is being triggered
      */
-    static _handle_general(groups, tree, collider_struct, trigger_struct, name) {
+    static _handle_general(groups, trees, collider_struct, trigger_struct, name) {
 
         for (var group_name in groups) {
             var targets = groups[group_name];
@@ -143,7 +143,7 @@ class CollisionEventHandler {
                 }
 
                 // get nearby objects
-                var objs = tree[group_name].get(
+                var objs = trees[group_name].get(
                     [bounds[0], bounds[1]],
                     [bounds[2], bounds[3]]
                 );
@@ -199,12 +199,12 @@ class CollisionEventHandler {
      * triggerable: ['sys'] ===> ...entity['sys']...
      * 
      * @param {Array[]} groups dictionary of grouped targets
-     * @param {QuadTree} tree filled-up quadtree
+     * @param {Array[]} trees dictionary of filled-up quadtrees
      * @param {Object[]} sprite_struct additional structure holding the sprite
      * @param {Object[]} trigger_struct additional structure holding the triggerable object
      * @param {String} name name of the event that is being triggered
      */
-    static _handle_particles(groups, tree, collider_struct, trigger_struct, name) {
+    static _handle_particles(groups, trees, collider_struct, trigger_struct, name) {
 
         //
     }

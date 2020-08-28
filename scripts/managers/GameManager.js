@@ -22,6 +22,7 @@ import { Skeleton } from "../Skeleton.js";
 import { Projectile } from "../projectiles/Projectile.js";
 import { ParticleBulletSystem } from "../projectiles/ParticleBulletSystem.js";
 import { GlowPBS } from "../projectiles/GlowPBS.js";
+import { Actor } from "../Actor.js";
 
 export { GameManager, GameManager as GaMa }; // also export an alias
 
@@ -101,7 +102,13 @@ class GameManager {
     static update() {
 
         // projectiles
-        // HERE...
+        Projectile.update_all();
+
+        // particles
+        ParticleBulletSystem.update_all();
+
+        // actors
+        Actor.update_all();
     }
 
     /**

@@ -165,8 +165,8 @@ class Bullet extends Projectile {
     }
 
     /**
-     * Static function: removes all destroyed projectiles. Does
-     * not remove empty groups. Does not trigger delete event by
+     * Static function: removes all destroyed projectiles. Also
+     * removes empty groups. Does not trigger delete event by
      * default.
      * * note: also applies parent class deletions
      * 
@@ -179,8 +179,15 @@ class Bullet extends Projectile {
 
         // delete from this class
         var ps = Bullet._p_bullets;
+
+        // remove empty groups
+        for (var i in ps) 
+            if (!ps[i] || !ps[i].length)
+                delete ps[i];
+        
+        // remove dead objects
         for (var g in ps)
-            ps[g] = ps[g].filter(p => p._state != Projectile.DESTROYED);
+            ps[g] = ps[g].filter(p => p && p._state != Projectile.DESTROYED);
     }
     
     /**
