@@ -122,7 +122,7 @@ class Tween {
     /**
      * Used with apply to automatically tween values.
      * 
-     * @param {Object[]} objects source objects containing the indices
+     * @param {Object[]} objects source objects containing the indices/keys
      * @param {(String[]|Number[])} indices source indices containing the values to tween
      */
     source(object, index) {

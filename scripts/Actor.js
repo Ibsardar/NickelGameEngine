@@ -119,8 +119,6 @@ class Actor {
      * ...
      */
     get_data() {}
-
-    static 
     
     /**
      * Static function: sets targets (reference) for a certain group.
@@ -228,13 +226,16 @@ class Actor {
         // TODO: make this more efficient (maybe store the collected and only update when a change flag is true per actor?)
         // collect all collidable limbs by group
         var ls = {};
-        for (let a of Actor._actors) {
-            var a_gs = a.skeleton.get_grouped_limbs();
-            for (var key in a_gs) {
-                if (ls[key])
-                    ls[key] = [...ls[key], a_gs[key]];
-                else
-                    ls[key] = a_gs[key];
+        for (var i in Actor._actors) {
+            var g = Actor._actors[i];
+            for (let a of g) {
+                var a_gs = a.skeleton.get_grouped_limbs();
+                for (var key in a_gs) {
+                    if (ls[key])
+                        ls[key] = [...ls[key], a_gs[key]];
+                    else
+                        ls[key] = a_gs[key];
+                }
             }
         }
         

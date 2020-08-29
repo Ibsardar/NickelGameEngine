@@ -20,7 +20,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-import { CollisionEventHandler } from "../CollisionEventHandler";
+import { CollisionEventHandler } from "../CollisionEventHandler.js";
 
 export { Projectile };
 
@@ -411,7 +411,7 @@ class Projectile {
      */
     static get group_count() {
 
-        return Projectile._projectiles.length;
+        return Object.keys(Projectile._projectiles).length;
     }
 
     /**

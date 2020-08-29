@@ -48,9 +48,8 @@ var akWraith;
 // Initialize Game Components
 InitGame.does = () => {
 
+    Nickel.DEBUG = true;
     GameManager.init(Game);
-    GameManager.max_projectiles_per_group_until_gc = 20;
-    GameManager.max_particles_per_group_until_gc = 100;
 
     // lBody = new Limb(Game, DATA.IMG.CREEP_01, true, 'above', {}) // body
     //         .attach(new Limb(Game, DATA.IMG.HEALTHBAR_RED, true, 'below', {pos:[0,4], rot:-45}, [0,0]) // arm
@@ -113,11 +112,11 @@ GameLoop.does = () => {
 
     //akTest.update();
     //akTest2.update();
-    akNecron.update();
-    akWraith.update();
+    //akNecron.update();
+    //akWraith.update();
 
-    // TODO: @todo
-    // figure out how to efficiently, user-friendly-ly update bullets and delete them when necessary
+    // ...figure out how to efficiently, user-friendly-ly update bullets and delete them when necessary
+    // figured it out! now test it...
 
     GameManager.handle();
 }

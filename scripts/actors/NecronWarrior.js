@@ -52,7 +52,7 @@ class NecronWarrior extends UnitActor {
 
         var gun = new GaussRifle();
         this.equip(gun, 'rarm');
-        gun.sprite.flip_v(true);
+        gun.flip_v();
 
         this._team = team;
     }

@@ -143,7 +143,6 @@ class Skeleton {
     }
 
     /**
-     * @
      * Called once per frame. Updates all changing parameters.
      */
     update() {
@@ -157,7 +156,7 @@ class Skeleton {
             }
         }
 
-        return this._root.update();
+        this._root.update_recursive();
     }
 
     /**
@@ -184,7 +183,7 @@ class Skeleton {
     }
 
     /**
-     * Returns a copy/clone of self.
+     * Returns a copy/clone of self. Extend this to copy actions and parts.
      */
     copy() {
 

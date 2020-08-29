@@ -20,8 +20,12 @@
 
 import { Skeleton } from "../Skeleton.js";
 import { Projectile } from "../projectiles/Projectile.js";
+import { Bullet } from "../projectiles/Bullet.js";
+import { StickyBullet } from "../projectiles/StickyBullet.js";
+import { SmartBullet } from "../projectiles/SmartBullet.js";
 import { ParticleBulletSystem } from "../projectiles/ParticleBulletSystem.js";
 import { GlowPBS } from "../projectiles/GlowPBS.js";
+import { Fire } from "../projectiles/Fire.js";
 import { Actor } from "../Actor.js";
 
 export { GameManager, GameManager as GaMa }; // also export an alias
@@ -64,9 +68,9 @@ class GameManager {
         GameManager.scene = scene;
         Skeleton._scene = scene;
 
-        GameManager.max_projectiles_per_group_until_gc = 500;
-        GameManager.max_particles_per_group_until_gc = 1000;
-        GameManager.trigger_delete_events_flag = true;
+        GameManager.max_projectiles_per_group_until_gc = Nickel.DEBUG ? 10 : 500;
+        GameManager.max_particles_per_group_until_gc = Nickel.DEBUG ? 50 : 1000;
+        GameManager.trigger_delete_events_flag = Nickel.DEBUG ? true : false;
     }
 
     /**
@@ -112,15 +116,20 @@ class GameManager {
     }
 
     /**
+     * @todo implement an efficient dead_count getter (just record additions and subtractions of object so you don't have to re-count every frame)
      * Collects garbage i.e. remove dead things.
      */
     static garbage_collection() {
 
-        if (Projectile.count >= Projectile.group_count * GameManager.max_projectiles_per_group_until_gc)
+        if (Projectile.count > Projectile.group_count * GameManager.max_projectiles_per_group_until_gc) {
+            if (Nickel.DEBUG) console.log('Projectile garbage collection triggered.');
             SmartBullet.delete_destroyed(GameManager.trigger_delete_events_flag);
+        }
 
-        if (ParticleBulletSystem.particle_count >= ParticleBulletSystem * GameManager.max_particles_per_group_until_gc)
+        if (ParticleBulletSystem.particle_count > ParticleBulletSystem.group_count * GameManager.max_particles_per_group_until_gc) {
+            if (Nickel.DEBUG) console.log('ParticleBulletSystem garbage collection triggered.');
             ParticleBulletSystem.delete_destroyed(GameManager.trigger_delete_events_flag);
+        }
     }
 
 }//end class

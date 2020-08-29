@@ -549,7 +549,7 @@ class ParticleBulletSystem {
     /**
      * Number of particles in all systems.
      * (includes destroyed, excludes deleted)
-     * *** warning: expensive operation ***
+     * *** @warning : expensive operation ***
      * 
      * @type {Number} particle count
      */
@@ -584,7 +584,7 @@ class ParticleBulletSystem {
      */
     static get group_count() {
 
-        return ParticleBulletSystem._systems.length;
+        return Object.keys(ParticleBulletSystem._systems).length;
     }
 
     /**
