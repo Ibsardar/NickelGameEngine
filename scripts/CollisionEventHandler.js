@@ -48,10 +48,7 @@ class CollisionEventHandler {
      */
     static handle(class_t, targets, trees, collider_struct=[], trigger_struct=[], name='hit') {
 
-        if (class_t === ParticleBulletSystem)
-            CollisionEventHandler._handle_particles(targets, trees, collider_struct, trigger_struct, name);
-        else
-            CollisionEventHandler._handle_general(targets, trees, collider_struct, trigger_struct, name);
+        CollisionEventHandler._handle_general(targets, trees, collider_struct, trigger_struct, name, class_t);
     }
 
     /**
@@ -62,13 +59,19 @@ class CollisionEventHandler {
      * collider: ['skeleton', '_root'] ===> ...entity['skeleton']['_root']...
      * triggerable: [] ===> ...entity...
      * 
+     * Another example:
+     * entity: {sys: ParticleBulletSystem, ptc: Particle}
+     * collider: ['ptc'] ===> ...entity['ptc']...
+     * triggerable: ['sys'] ===> ...entity['sys']...
+     * 
      * @param {Array[]} groups dictionary of grouped targets
      * @param {Array[]} trees dictionary of filled-up quadtrees
      * @param {Object[]} collider_struct additional structure holding the sprite
      * @param {Object[]} trigger_struct additional structure holding the triggerable object
      * @param {String} name name of the event that is being triggered
+     * @param {Function} class_t Class type for determining how to handle events
      */
-    static _handle_general(groups, trees, collider_struct, trigger_struct, name) {
+    static _handle_general(groups, trees, collider_struct, trigger_struct, name, class_t) {
 
         for (var group_name in groups) {
             var targets = groups[group_name];
@@ -77,19 +80,25 @@ class CollisionEventHandler {
                 // (left, top, width, height)
                 var bounds;
 
+                // type of target (null means collidable i.e. has a sprite)
+                var ttype;
+
                 // if target is point
                 if (Nickel.UTILITY.is_array(target)) {
                     bounds = [target[0], target[1], 1, 1];
+                    ttype = 'v';
                 }
 
                 // if target is polygon
                 else if (target.type == 'SimplePoly') {
                     bounds = target.get_bounds(2);
+                    ttype = 'p';
                 }
                 
                 // if target is circle
                 else if (target.type == 'SimpleCircle') {
                     bounds = target.get_bounds(2);
+                    ttype = 'c';
                 }
 
                 // if target is sprite
@@ -158,12 +167,14 @@ class CollisionEventHandler {
                     if (obj.entity === target) continue;
 
                     // ignore limb hitting same actor or self and vice versa
-                    var target_actor_id = target instanceof Limb ? target.actor.id :
-                        target instanceof Actor ? target.id : false;
-                    if (target_actor_id) {
-                        var entity_actor_id = obj.entity instanceof Limb ? obj.entity.actor.id :
-                                            obj.entity instanceof Actor ? obj.entity.id : false;
-                        if (entity_actor_id === target_actor_id) continue;
+                    if (class_t !== ParticleBulletSystem) {
+                        var target_actor_id = target instanceof Limb ? target.actor.id :
+                            target instanceof Actor ? target.id : false;
+                        if (target_actor_id) {
+                            var entity_actor_id = obj.entity instanceof Limb ? obj.entity.actor.id :
+                                                obj.entity instanceof Actor ? obj.entity.id : false;
+                            if (entity_actor_id === target_actor_id) continue;
+                        }
                     }
 
                     // get collidable from target
@@ -175,14 +186,32 @@ class CollisionEventHandler {
                     // get collidable
                     var collidable = get_sub_prop(collider_struct, obj.entity);
                     
+                    // check for collision
+                    var collision = false;
+                    if (class_t === ParticleBulletSystem) {
+
+                        if (ttype == 'v')
+                            collision = Collision_Detector.collides_point_point(target_collidable, collidable.get_canvas_pos());
+                        else if (ttype == 'p')
+                            collision = Collision_Detector.collides_poly_point(target_collidable, collidable.get_canvas_pos());
+                        else if (ttype == 'c')
+                            collision = Collision_Detector.collides_circle_point(target_collidable, collidable.get_canvas_pos());
+                        else
+                            collision = target_collidable.colliding_with(collidable.get_canvas_pos(), false);
+                    } else
+                        collision = collidable.colliding_with(target_collidable, false);
+                    
                     // trigger event on collided objects
-                    if (collidable.colliding_with(target_collidable, false)) {
+                    if (collision) {
 
                         // get triggerable
                         var triggerable = get_sub_prop(trigger_struct, obj.entity);
 
                         // trigger event
-                        triggerable.trigger(name, triggerable, target);
+                        if (class_t === ParticleBulletSystem)
+                            triggerable.trigger(name, triggerable, collidable, target);
+                        else
+                            triggerable.trigger(name, triggerable, target);
                     }
                 }
             }
@@ -190,6 +219,7 @@ class CollisionEventHandler {
     }
 
     /**
+     * @junk ...
      * @todo
      * Handles collision events for particle systems.
      * 
@@ -204,9 +234,9 @@ class CollisionEventHandler {
      * @param {Object[]} trigger_struct additional structure holding the triggerable object
      * @param {String} name name of the event that is being triggered
      */
-    static _handle_particles(groups, trees, collider_struct, trigger_struct, name) {
+    //static _handle_particles(groups, trees, collider_struct, trigger_struct, name) {
 
         //
-    }
+    //}
 
 }//end class

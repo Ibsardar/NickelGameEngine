@@ -87,22 +87,18 @@ InitGame.does = () => {
 
     //Actor.delete_group('test-1');
 
-    //akNecron = new NecronWarrior('necrons', 'A');
-    //akNecron.position = [75,375];
-    //akNecron.rotation = 45;
+    akNecron = new NecronWarrior('necrons', 'A');
+    akNecron.position = [75,375];
+    akNecron.rotation = 45;
 
-    //akWraith = new NecronWraith('necrons', 'B');
-    //akWraith.position = [400,175];
-    //akWraith.rotation = 220;
+    akWraith = new NecronWraith('necrons', 'B');
+    akWraith.position = [400,175];
+    akWraith.rotation = 220;
 
-
-    // HERE...
-
-    
     // junk
     //Nickel.GLOBALS.Game = Game;
-    //Nickel.GLOBALS.akNecron = akNecron;
-    //Nickel.GLOBALS.akWraith = akWraith;
+    Nickel.GLOBALS.akNecron = akNecron;
+    Nickel.GLOBALS.akWraith = akWraith;
     //Nickel.GLOBALS.akTest = akTest;
     //Nickel.GLOBALS.akTest2 = akTest2;
     //Nickel.GLOBALS.Actor = Actor;
@@ -118,6 +114,9 @@ GameLoop.does = () => {
     //akTest2.update();
     //akNecron.update();
     //akWraith.update();
+
+    // ...figure out how to efficiently, user-friendly-ly update bullets and delete them when necessary
+    // figured it out! now test it...
 
     GameManager.handle();
 }

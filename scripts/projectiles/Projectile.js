@@ -252,7 +252,7 @@ class Projectile {
             qs[g].clear();
             for (var i in ps[g]) {
                 var p = ps[g][i];
-                if (p._state != Projectile.DESTROYED) {
+                if (p._state != Projectile.DESTROYED && p.collidable) {
                     qs[g].in(p,
                         [p.sprite.get_left(), p.sprite.get_top()],
                         [p.sprite.get_w_bound(), p.sprite.get_h_bound()]
@@ -582,6 +582,20 @@ class Projectile {
      */
     get scale() { return this.sprite.get_scale(); }
     set scale(s) { this.sprite.set_scale2(s[0], s[1]); }
+    
+    /**
+     * Is the projectile collidable or not.
+     * 
+     * @type {Boolean} collidable or not
+     */
+    get collidable () { return this._collidable; }
+    set collidable (bool) {
+        this._collidable = bool;
+        if (this._collidable && !this.sprite.hull) {
+            console.error('ERROR: Projectile>set collidable: sprite does not have a hull so projectile cannot be collidable.');
+            this._collidable = false;
+        }
+    }
 
     /// (Static Constant) Projectile states.
     static get WAITING_INIT ()  { return 0; }
@@ -650,6 +664,9 @@ class Projectile {
         destroy : new Queue(),
         delete : new Queue()
     }
+
+    /// (Private) indicates if this projectile is collidable
+    _collidable = true;
 
     /// Main sprite object of bullet.
     sprite;

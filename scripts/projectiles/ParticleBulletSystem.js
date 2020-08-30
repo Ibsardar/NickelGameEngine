@@ -296,10 +296,10 @@ class ParticleBulletSystem {
             qs[g].clear();
             for (var i in ps[g]) {
                 var sys = ps[g][i];
-                if (sys._state != ParticleBulletSystem.DESTROYED) {
+                if (sys._state != ParticleBulletSystem.DESTROYED && sys.collidable) {
                     var ptcs = sys._ps.queue.data();
                     for (let ptc of ptcs) {
-                        if (!ptc.dead) {
+                        if (!ptc.dead && ptc.collidable) {
                             var pos = ptc.get_canvas_pos();
                             var pair = {
                                 ptc : ptc,
@@ -313,6 +313,10 @@ class ParticleBulletSystem {
         }
 
         // check if particles are hitting targets from same group
+        // * note: ignore all destroyed targets *
+        CollisionEventHandler.handle(ParticleBulletSystem, ParticleBulletSystem._targets, qs, ['ptc'], ['sys']);
+
+        /*// check if particles are hitting targets from same group
         // * note: ignore all destroyed targets *
         var ts = ParticleBulletSystem._targets;
         for (var g in ts) {
@@ -407,6 +411,7 @@ class ParticleBulletSystem {
                 }
             }
         }
+        */
 
         // permit external trigger requests
         ParticleBulletSystem._resolve_trigger_requests('hit');
@@ -833,6 +838,14 @@ class ParticleBulletSystem {
      */
     get create_amount() { return this._ps.amount; }
     set create_amount(amt) { this._ps.amount = amt; }
+    
+    /**
+     * Is the system collidable or not.
+     * 
+     * @type {Boolean} collidable or not
+     */
+    get collidable () { return this._collidable; }
+    set collidable (bool) { this._collidable = bool; }
 
     /// (Static Constant) ParticleBulletSystem states.
     static get WAITING_INIT ()  { return 0; }
@@ -916,6 +929,9 @@ class ParticleBulletSystem {
 
     /// (Private) Sound effect on particle bullet destruction
     _snd_destroy;
+
+    /// (Private) indicates if this system is collidable
+    _collidable = true;
 
     // Combat variables
     _dmg_normal; // damage to armor, then health

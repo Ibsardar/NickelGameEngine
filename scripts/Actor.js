@@ -248,9 +248,8 @@ class Actor {
             qs[g].clear();
             for (var i in ls[g]) {
                 var limb = ls[g][i];
-                if (!limb.disabled) {
+                if (!limb.disabled && limb.collidable) {
                     if (limb.sprite && !limb.sprite.is_destroyed()) {
-                        // TODO: check here if sprite is collidable...
                         qs[g].in(limb,
                             [limb.sprite.get_left(), limb.sprite.get_top()],
                             [limb.sprite.get_w_bound(), limb.sprite.get_h_bound()]
@@ -665,7 +664,7 @@ class Actor {
      * 
      * @type {Number[]} cx, cy coordinates
      */
-    get position() { return this.skeleton.position }
+    get position() { return this.skeleton.position; }
     set position(p) { this.skeleton.position = p; }
 
     /**
@@ -673,8 +672,15 @@ class Actor {
      * 
      * @type {Number} degrees
      */
-    get rotation() { return this.skeleton.rotation }
+    get rotation() { return this.skeleton.rotation; }
     set rotation(degs) { this.skeleton.rotation = degs; }
+
+    /**
+     * Make all limbs collidable or not.
+     * 
+     * @type {Boolean} collidable or not
+     */
+    set all_limbs_collidable (bool) { this.skeleton.each((limb) => limb.collidable = bool); }
 
     /// (Static Constant) Actor states.
     static get WAITING_INIT ()  { return 0; }

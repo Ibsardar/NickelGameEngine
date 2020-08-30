@@ -885,6 +885,20 @@ class Limb {
     disable () { this._disabled = true; }
     enable () { this._disabled = false; }
 
+    /**
+     * Is the limb collidable or not.
+     * 
+     * @type {Boolean} collidable or not
+     */
+    get collidable () { return this._collidable; }
+    set collidable (bool) {
+        this._collidable = bool;
+        if (this._collidable && !this.sprite.hull) {
+            console.error('ERROR: Limb>set collidable: sprite does not have a hull so limb cannot be collidable.');
+            this._collidable = false;
+        }
+    }
+
     /// (Private) Is the limb updating or not.
     _disabled = false;
 
@@ -951,6 +965,9 @@ class Limb {
     ///     etc...
     /// }
     _keypoints = {};
+
+    /// (Private) indicates if this limb is collidable
+    _collidable = true;
 
     /// id of object
     id = Nickel.UTILITY.assign_id();

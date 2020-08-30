@@ -3422,6 +3422,7 @@ var ParticleBuilder = {
         particle.sys = system;
         particle.funcs = []; // list of private behaviours
 
+        particle.collidable = false;
         particle.dead = false;
         particle.time_past = 0; // time past so far
         particle.time_start = Date.now();
