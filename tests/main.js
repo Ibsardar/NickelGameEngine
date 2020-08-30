@@ -28,10 +28,11 @@ import { GameLoop, InitGame } from '../scripts/update.js';
 import { Limb } from '../scripts/Limb.js';
 import { Skeleton } from '../scripts/Skeleton.js';
 import { Actor } from '../scripts/Actor.js';
-import { NecronWarrior } from '../scripts/actors/NecronWarrior.js';
+import { NecronWarrior } from '../scripts/actors/necrons/NecronWarrior.js';
 import { Bullet } from '../scripts/projectiles/Bullet.js';
 import { GameManager } from '../scripts/managers/GameManager.js';
-import { NecronWraith } from '../scripts/actors/NecronWraith.js';
+import { NecronWraith } from '../scripts/actors/necrons/NecronWraith.js';
+import { NecronCanoptekWraith } from '../scripts/actors/necrons/NecronCanoptekWraith.js';
 
 // Set FPS:
 Game.set_fps(60); // 60 is best
@@ -44,6 +45,7 @@ var akTest;
 var akTest2;
 var akNecron;
 var akWraith;
+var akCanWraith;
 
 // Initialize Game Components
 InitGame.does = () => {
@@ -96,7 +98,10 @@ InitGame.does = () => {
     //akWraith.rotation = 220;
 
 
-    // HERE...
+
+    akCanWraith = new NecronCanoptekWraith('necrons', 'B');
+    akCanWraith.position = [400,175];
+    akCanWraith.rotation = 0;
 
     
     // junk
@@ -107,6 +112,7 @@ InitGame.does = () => {
     //Nickel.GLOBALS.akTest2 = akTest2;
     //Nickel.GLOBALS.Actor = Actor;
     //Nickel.GLOBALS.Bullet = Bullet;
+    Nickel.GLOBALS.akCanWraith = akCanWraith;
 }
 
 // Game Loop:

@@ -28,10 +28,10 @@ import { GameLoop, InitGame } from '../scripts/update.js';
 import { Limb } from '../scripts/Limb.js';
 import { Skeleton } from '../scripts/Skeleton.js';
 import { Actor } from '../scripts/Actor.js';
-import { NecronWarrior } from '../scripts/actors/NecronWarrior.js';
+import { NecronWarrior } from '../scripts/actors/necrons/NecronWarrior.js';
 import { Bullet } from '../scripts/projectiles/Bullet.js';
 import { GameManager } from '../scripts/managers/GameManager.js';
-import { NecronWraith } from '../scripts/actors/NecronWraith.js';
+import { NecronWraith } from '../scripts/actors/necrons/NecronWraith.js';
 
 // Set FPS:
 Game.set_fps(60); // 60 is best
