@@ -89,15 +89,13 @@ InitGame.does = () => {
 
     //Actor.delete_group('test-1');
 
-    //akNecron = new NecronWarrior('necrons', 'A');
-    //akNecron.position = [75,375];
-    //akNecron.rotation = 45;
+    akNecron = new NecronWarrior('necrons', 'A');
+    akNecron.position = [75,375];
+    akNecron.rotation = 45;
 
-    //akWraith = new NecronWraith('necrons', 'B');
-    //akWraith.position = [400,175];
-    //akWraith.rotation = 220;
-
-
+    akWraith = new NecronWraith('necrons', 'B');
+    akWraith.position = [400,175];
+    akWraith.rotation = 220;
 
     akCanWraith = new NecronCanoptekWraith('necrons', 'B');
     akCanWraith.position = [400,175];

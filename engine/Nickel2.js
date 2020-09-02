@@ -1334,7 +1334,7 @@ var GridBuilder = {
                 }
             }
 
-            // loaded sprites
+            // loaded sprites (actually anything with a .update function)
             for (var i in grid.load) {
                 grid.load[i].update();
             }
