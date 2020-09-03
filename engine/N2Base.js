@@ -2710,7 +2710,7 @@ function SimpleImage(scene, source, w=0, h=0, pos=[0,0],
 ////////////////////////////////////////////
 ///   SIMPLE BUTTON   //////////////////////
 ////////////////////////////////////////////
-function SimpleButton(scene, image, w=0, h=0, pos=[0,0]) {
+function SimpleButton(scene, image=null, w=0, h=0, pos=[0,0]) {
     
     // general
     this.id = Nickel.UTILITY.assign_id();
@@ -2745,11 +2745,13 @@ function SimpleButton(scene, image, w=0, h=0, pos=[0,0]) {
         }
 
         // update image
-        this.image.x = this.x;
-        this.image.y = this.y;
-        this.image.width = this.width;
-        this.image.height = this.height;
-        this.image.update();
+        if (this.image) {
+            this.image.x = this.x;
+            this.image.y = this.y;
+            this.image.width = this.width;
+            this.image.height = this.height;
+            this.image.update();
+        }
 
         // events
         this.handle_events();
@@ -2758,15 +2760,19 @@ function SimpleButton(scene, image, w=0, h=0, pos=[0,0]) {
         this.update_more();
     }
 
+    /// Calculates mouse point based on canvas point
+    this.mouse_func = (x,y) => [x,y];
+
     this.handle_events = function() {
         //--    Handles mouse hover and lmb clicks.
         //--
         
         // mouse hover
-        if (this.scene.mouse_x <= this.right &&
-            this.scene.mouse_x >= this.left &&
-            this.scene.mouse_y <= this.bottom &&
-            this.scene.mouse_y >= this.top) {
+        var mpos = this.mouse_func(this.scene.mouse_x, this.scene.mouse_y);
+        if (mpos[0] <= this.right &&
+            mpos[0] >= this.left &&
+            mpos[1] <= this.bottom &&
+            mpos[1] >= this.top) {
             if (!this._hovering) {
                 this._hovering = true;
                 this.on_enter();
@@ -3515,15 +3521,19 @@ function SimplePanel(scene, img, w=0, h=0, pos=[0,0], rows=0, cols=0, vrows=0, v
         }
     }
 
+    /// Calculates mouse point based on canvas point
+    this.mouse_func = (x,y) => [x,y];
+
     this.handle_events = function() {
         //--    Handles mouse hover
         //--
 
         // mouse hover
-        if (this.scene.mouse_x <= this.right &&
-            this.scene.mouse_x >= this.left &&
-            this.scene.mouse_y <= this.bottom &&
-            this.scene.mouse_y >= this.top)
+        var mpos = this.mouse_func(this.scene.mouse_x, this.scene.mouse_y);
+        if (mpos[0] <= this.right &&
+            mpos[0] >= this.left &&
+            mpos[1] <= this.bottom &&
+            mpos[1] >= this.top)
             this.on_hover();
     }
 
@@ -7223,14 +7233,18 @@ function SpriteSelector(scene) {
     // --
 
 
+    /// Calculates mouse point based on canvas point
+    this.mouse_func = (x,y) => [x,y];
+    
     this.update_selector = function() {
         //--    Manages a selector box sprite that is used
         //--    for selecting multiple sprites
         //--
 
         // get cursor position
-        var mx = this.scene.mouse_x;
-        var my = this.scene.mouse_y;
+        var mpos = this.mouse_func(this.scene.mouse_x, this.scene.mouse_y);
+        var mx = mpos[0];
+        var my = mpos[1];
 
         // start
         if (this.scene.mouse_curr == this.selector.starter &&
@@ -7505,9 +7519,8 @@ function SpriteSelector(scene) {
         //--    (ordered by collision layer)
         //--
 
-        var mx = this.scene.mouse_x;
-        var my = this.scene.mouse_y;
-        return this.get_under_point(sprites,mx,my,sorted);
+        var mpos = this.mouse_func(this.scene.mouse_x, this.scene.mouse_y);
+        return this.get_under_point(sprites,mpos[0],mpos[1],sorted);
     }
 
     this.get_under_sprite = function(sprites, spr, sorted=true) {

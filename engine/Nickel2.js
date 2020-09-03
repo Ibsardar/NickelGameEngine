@@ -1300,6 +1300,8 @@ var GridBuilder = {
         // setters
         grid.load_sprite = function(spr) {this.load.push(spr);}
         grid.load_sprites = function(sprs) {this.load.push(...sprs);}
+        grid.load_updater = grid.load_sprite; // alias
+        grid.load_updaters = grid.load_sprites; // alias
         grid.empty_load = function() {this.load = [];}
         grid.reset_transform = function() {this.transform = {
             x  : 0,  y : 0, // translation
@@ -1334,7 +1336,7 @@ var GridBuilder = {
                 }
             }
 
-            // loaded sprites (actually anything with a .update function)
+            // loaded sprites/updaters
             for (var i in grid.load) {
                 grid.load[i].update();
             }

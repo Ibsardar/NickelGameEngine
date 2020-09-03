@@ -119,8 +119,8 @@
 
 .dk-tray {
     display: inline-block;
-    min-height: 100px;
-    min-width: 800px;
+    min-height: 40px;
+    min-width: 600px;
     background-color: #ebebeb;
     color: rgb(206, 206, 206);
     font-family: Courier, Verdana;
@@ -136,7 +136,7 @@
 }
 
 .dk-tray div {
-    transform: translateY(33.33%);
+    transform: translateY(5%);
 }
 
 .dk-tray:hover {

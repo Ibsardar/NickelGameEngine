@@ -43,6 +43,9 @@ class GameManager {
     // Viewport of the game
     static scene;
 
+    // Grid (if any) that the manager updates everything in
+    static _world;
+
     // max # of projectiles per group until garbage
     // collection deletes all dead projectiles
     static max_projectiles_per_group_until_gc;
@@ -68,7 +71,7 @@ class GameManager {
         GameManager.scene = scene;
         Skeleton._scene = scene;
 
-        GameManager.max_projectiles_per_group_until_gc = Nickel.DEBUG ? 10 : 500;
+        GameManager.max_projectiles_per_group_until_gc = Nickel.DEBUG ? 10 : 100;
         GameManager.max_particles_per_group_until_gc = Nickel.DEBUG ? 50 : 1000;
         GameManager.trigger_delete_events_flag = Nickel.DEBUG ? true : false;
     }
@@ -76,8 +79,27 @@ class GameManager {
     /**
      * Runs handles for every base class that has handles.
      * Runs garbage collection.
+     * Runs everything inside Grid if it is set.
      */
     static handle() {
+
+        // update world instead if set
+        if (GameManager._world)
+        
+            // grid
+            GameManager._world.update();
+
+        // if no world available, update into the raw canvas
+        else
+
+            GameManager._handle();
+    }
+
+    /**
+     * Runs handles for every base class that has handles.
+     * Runs garbage collection.
+     */
+    static _handle() {
 
         // actors
         Actor.handle_triggers();
@@ -130,6 +152,22 @@ class GameManager {
             if (Nickel.DEBUG) console.log('ParticleBulletSystem garbage collection triggered.');
             ParticleBulletSystem.delete_destroyed(GameManager.trigger_delete_events_flag);
         }
+    }
+
+    /**
+     * Grid Object representing the game's worldspace.
+     * 
+     * @type {Grid|null} Grid or null
+     */
+    static get world() { return GameManager._world; }
+    static set world(grid) {
+        if (grid instanceof Grid) {
+            GameManager._world = grid;
+            GameManager._world.load_updater({ update : GameManager._handle });
+        } else if (!grid)
+            GameManager._world = null;
+        else
+            console.error('ERROR: GameManager>set world: expecting instance of Grid (or falsey to unset).');
     }
 
 }//end class
