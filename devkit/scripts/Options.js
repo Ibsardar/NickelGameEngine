@@ -29,13 +29,19 @@ var MENU_UI_OPTS = {
     scene : Game,
     manager : GameManager,
     element_size_4 : [350, 50],
-    weight : 'bold'
+    weight : 'bold',
+    color_primary : '#676767',
+    color_secondary : '#343434',
+    color_tertiary : 'red'
 }
 var AB_UI_OPTS = {
     scene : Game,
     manager : GameManager,
     element_size_4 : [350, 50],
-    weight : 'bold'
+    weight : 'bold',
+    color_primary : '#676767',
+    color_secondary : '#343434',
+    color_tertiary : 'red'
 }
 
 // all of these are used in GRID_OPTS
@@ -107,7 +113,7 @@ var fire_ptc = {
     enable_rotation         : false,
     enable_scaling          : true,
     enable_transparency     : true,
-    enable_fill             : true,
+    enable_fill             : false,
     enable_stroke           : false
 }
 var fire_ps = {

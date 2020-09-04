@@ -2525,6 +2525,7 @@ function SimpleImage(scene, source, w=0, h=0, pos=[0,0],
             ctx.fillStyle = this.color;
             ctx.strokeStyle = this.outline;
             ctx.lineWidth = this.outline_thickness;
+            ctx.beginPath();
             if (this.cropped)
                 // (params: x,y, w,h)
                 ctx.rect(
