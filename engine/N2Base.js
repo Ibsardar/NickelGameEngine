@@ -2286,10 +2286,13 @@ function SimpleText(scene, text, font_family='sans-serif', size=12, color='black
         }
 
         // user custom update
-        this.update_more();
+        this.update_before();
 
         // render graphics
         this.draw();
+
+        // user custom update
+        this.update_more();
     }
 
     this.draw = function() {
@@ -2358,6 +2361,12 @@ function SimpleText(scene, text, font_family='sans-serif', size=12, color='black
         //--
 
     }
+
+    this.update_before = function() {
+        //--    Called in update. Meant to be over-ridden.
+        //--
+
+    }
     
     //
     // setters
@@ -2418,7 +2427,7 @@ function SimpleText(scene, text, font_family='sans-serif', size=12, color='black
 ///   SIMPLE IMAGE   ///////////////////////
 ////////////////////////////////////////////
 function SimpleImage(scene, source, w=0, h=0, pos=[0,0],
-        color='', outline='', outline_thickness=0) {
+        color=null, outline=null, outline_thickness=0) {
     
     // general
     this.id = Nickel.UTILITY.assign_id();
@@ -2464,10 +2473,13 @@ function SimpleImage(scene, source, w=0, h=0, pos=[0,0],
         }
 
         // user custom update
-        this.update_more();
+        this.update_before();
 
         // render graphics
         this.draw();
+
+        // user custom update
+        this.update_more();
     }
 
     this.draw = function() {
@@ -2511,26 +2523,28 @@ function SimpleImage(scene, source, w=0, h=0, pos=[0,0],
                 );
         } else {
             ctx.fillStyle = this.color;
-            ctx.strokeStyle = this.oultine;
+            ctx.strokeStyle = this.outline;
             ctx.lineWidth = this.outline_thickness;
             if (this.cropped)
                 // (params: x,y, w,h)
-                ctx.fillRect(
+                ctx.rect(
                     this.x, this.y,
                     this.width, this.height
                 );
             else if (this.cripped)
                 // (params: x,y, w,h)
-                ctx.fillRect(
+                ctx.rect(
                     this.x + this._crip.x, this.y + this._crip.y,
                     this._crip.w, this._crip.h
                 );
             else
                 // (params: x,y, w,h)
-                ctx.fillRect(
+                ctx.rect(
                     this.x, this.y,
                     this.width, this.height
                 );
+            if (this.outline) ctx.stroke();
+            if (this.color) ctx.fill();
         }
 
         ctx.restore();
@@ -2566,6 +2580,12 @@ function SimpleImage(scene, source, w=0, h=0, pos=[0,0],
     }
 
     this.update_more = function() {
+        //--    Called in update. Meant to be over-ridden.
+        //--
+
+    }
+
+    this.update_before = function() {
         //--    Called in update. Meant to be over-ridden.
         //--
 
@@ -2744,6 +2764,9 @@ function SimpleButton(scene, image=null, w=0, h=0, pos=[0,0]) {
             return;
         }
 
+        // user custom update
+        this.update_before();
+
         // update image
         if (this.image) {
             this.image.x = this.x;
@@ -2829,6 +2852,12 @@ function SimpleButton(scene, image=null, w=0, h=0, pos=[0,0]) {
     }
 
     this.update_more = function() {
+        //--    Called in update. Meant to be over-ridden.
+        //--
+
+    }
+
+    this.update_before = function() {
         //--    Called in update. Meant to be over-ridden.
         //--
 
@@ -2950,6 +2979,9 @@ function SimpleHLoadBar(scene, img_under, img_over, w=0, h=0, pos=[0,0], l2r=tru
             return;
         }
 
+        // user custom update
+        this.update_before();
+
         // events
         this.handle_events();
 
@@ -3037,6 +3069,12 @@ function SimpleHLoadBar(scene, img_under, img_over, w=0, h=0, pos=[0,0], l2r=tru
     }
 
     this.update_more = function() {
+        //--    Called in update. Meant to be over-ridden.
+        //--
+
+    }
+
+    this.update_before = function() {
         //--    Called in update. Meant to be over-ridden.
         //--
 
@@ -3193,6 +3231,9 @@ function SimpleVLoadBar(scene, img_under, img_over, w=0, h=0, pos=[0,0], t2b=fal
             return;
         }
 
+        // user custom update
+        this.update_before();
+
         // events
         this.handle_events();
 
@@ -3280,6 +3321,12 @@ function SimpleVLoadBar(scene, img_under, img_over, w=0, h=0, pos=[0,0], t2b=fal
     }
 
     this.update_more = function() {
+        //--    Called in update. Meant to be over-ridden.
+        //--
+
+    }
+
+    this.update_before = function() {
         //--    Called in update. Meant to be over-ridden.
         //--
 
@@ -3446,6 +3493,9 @@ function SimplePanel(scene, img, w=0, h=0, pos=[0,0], rows=0, cols=0, vrows=0, v
             return;
         }
 
+        // user custom update
+        this.update_before();
+
         // events
         this.handle_events();
 
@@ -3567,6 +3617,12 @@ function SimplePanel(scene, img, w=0, h=0, pos=[0,0], rows=0, cols=0, vrows=0, v
     }
 
     this.update_more = function() {
+        //--    Called in update. Meant to be over-ridden.
+        //--
+
+    }
+
+    this.update_before = function() {
         //--    Called in update. Meant to be over-ridden.
         //--
 
@@ -3822,11 +3878,11 @@ function SimplePoly(scene, vertices, is_equiangular=false, track_point=null) {
             return;
         }
 
-        // user custom update
-        this.update_more();
-
         // render graphics
         this.draw();
+
+        // user custom update
+        this.update_more();
     }
 
     this.draw = function() {
@@ -3840,7 +3896,7 @@ function SimplePoly(scene, vertices, is_equiangular=false, track_point=null) {
         }
 
         // skip if no stroke color
-        if (!this.stroke_color) {
+        if (!this.stroke_color && !this.stroke_color) {
             return;
         }
 
@@ -3864,7 +3920,9 @@ function SimplePoly(scene, vertices, is_equiangular=false, track_point=null) {
             ctx.lineTo(this.vertices[i][0], this.vertices[i][1]);
         }
         ctx.lineTo(this.x, this.y);
-        ctx.stroke();
+        //ctx.closePath(); // heyer
+        if (this.stroke_color)
+            ctx.stroke();
         if (this.stroke_fill)
             ctx.fill();
 
@@ -4196,11 +4254,11 @@ function SimpleEllipse(scene, radius_h, radius_v) {
             return;
         }
 
-        // user custom update
-        this.update_more();
-
         // render graphics
         this.draw();
+
+        // user custom update
+        this.update_more();
     }
 
     this.draw = function() {
@@ -4214,7 +4272,7 @@ function SimpleEllipse(scene, radius_h, radius_v) {
         }
 
         // skip if no stroke color
-        if (!this.stroke_color) {
+        if (!this.stroke_color && !this.stroke_fill) {
             return;
         }
 
@@ -4235,7 +4293,9 @@ function SimpleEllipse(scene, radius_h, radius_v) {
         ctx.beginPath();
         // (params: cx,cy,rad_h,rad_v,rot,strt_angle,end_angle,anticlockwise)
         ctx.ellipse(this.cx,this.cy,this.radius_h,this.radius_v,-1*this.rot,0,2*Math.PI);
-        ctx.stroke();
+        //ctx.closePath(); // heyer
+        if (this.stroke_color)
+            ctx.stroke();
         if (this.stroke_fill)
             ctx.fill();
 
@@ -4422,11 +4482,11 @@ function SimpleCircle(scene, radius, track_point=null) {
             return;
         }
 
-        // user custom update
-        this.update_more();
-
         // render graphics
         this.draw();
+
+        // user custom update
+        this.update_more();
     }
 
     this.draw = function() {
@@ -4439,8 +4499,8 @@ function SimpleCircle(scene, radius, track_point=null) {
             return;
         }
 
-        // skip if no stroke color
-        if (!this.stroke_color) {
+        // skip if no stroke color and no stroke fill
+        if (!this.stroke_color && !this.stroke_fill) {
             return;
         }
 
@@ -4461,7 +4521,9 @@ function SimpleCircle(scene, radius, track_point=null) {
         ctx.beginPath();
         // (params: cx, cy, radius, start_angle, end_angle, anticlockwise?)
         ctx.arc(this.cx,this.cy,this.radius,0,2*Math.PI,false);
-        ctx.stroke();
+        //ctx.closePath(); // heyer
+        if (this.stroke_color)
+            ctx.stroke();
         if (this.stroke_fill)
             ctx.fill();
 
@@ -4734,11 +4796,11 @@ function SimpleLine(scene, startpoint, endpoint) {
             return;
         }
 
-        // user custom update
-        this.update_more();
-
         // render graphics
         this.draw();
+
+        // user custom update
+        this.update_more();
     }
 
     this.draw = function() {
@@ -4772,6 +4834,7 @@ function SimpleLine(scene, startpoint, endpoint) {
         ctx.beginPath();
         ctx.moveTo(this.x, this.y);
         ctx.lineTo(this.xend, this.yend);
+        //ctx.closePath(); // heyer
         ctx.stroke();
 
         ctx.restore();
@@ -5684,11 +5747,11 @@ function Sprite(scene, image_data, has_bbox=true,
         // update history
         this.update_records();
 
-        // user custom update
-        this.update_more();
-
         // render graphics
         this.image && this.draw();
+
+        // user custom update
+        this.update_more();
     }
 
     this.draw = function() {
@@ -7238,7 +7301,8 @@ function SpriteSelector(scene) {
     
     this.update_selector = function() {
         //--    Manages a selector box sprite that is used
-        //--    for selecting multiple sprites
+        //--    for selecting multiple sprites. Expects
+        //--    mouse to be reset externally.
         //--
 
         // get cursor position
@@ -7271,7 +7335,7 @@ function SpriteSelector(scene) {
             this.selector.is_visible()) {
 
             this.selector.hide();
-            this.scene.reset_mouse_upped();
+            //this.scene.reset_mouse_upped(); <- should be handled elsewhere... like GameManager
         }
 
         this.selector.update();
@@ -7296,6 +7360,7 @@ function SpriteSelector(scene) {
             ctx.rect(this.selector.get_x(), this.selector.get_y(),
                      this.selector.get_w(), this.selector.get_h());
 
+            //ctx.closePath(); // heyer
             ctx.stroke();
             ctx.restore();
         }
@@ -8487,6 +8552,8 @@ function QuadTree(max_objs, max_depth, bounds) {
                 context.beginPath();
                 context.rect(curr.bounds.x, curr.bounds.y,
                                   curr.bounds.w, curr.bounds.h);
+
+                //context.closePath(); // heyer
                 context.stroke();
             }
 
@@ -8506,6 +8573,7 @@ function QuadTree(max_objs, max_depth, bounds) {
                     context.rect(o.bounds.x, o.bounds.y,
                                       o.bounds.w, o.bounds.h);
                 }
+                //context.closePath(); // heyer
                 context.stroke();
             }
 

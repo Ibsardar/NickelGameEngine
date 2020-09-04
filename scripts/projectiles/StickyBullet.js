@@ -290,6 +290,16 @@ class StickyBullet extends Bullet {
     }
 
     /**
+     * @overrides parent class function.
+     * Resets all static data to the default values.
+     */
+    static reset() {
+
+        Bullet.reset();
+        StickyBullet._p_stickies = {};
+    }
+
+    /**
      * Override: Paused state of bullet's life-timer and stick-timer.
      *
      * @type {Boolean}

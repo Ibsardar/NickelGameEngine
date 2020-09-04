@@ -237,6 +237,14 @@ class Skeleton {
     }
 
     /**
+     * Resets all static data to the default values.
+     */
+    static reset() {
+
+        Skeleton._scene = null;
+    }
+
+    /**
      * Root limb of skeleton.
      * 
      * @type {Limb} limb

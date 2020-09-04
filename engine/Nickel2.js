@@ -1350,11 +1350,11 @@ var GridBuilder = {
             // rect
             grid.update_rect();
 
-            // update extra custom script
-            grid.update_more();
-
             // apply transformations and draw grid
             grid.draw();
+
+            // update extra custom script
+            grid.update_more();
         }
 
         // applies an extra script to pre-frame updates
@@ -3491,11 +3491,11 @@ var ParticleBuilder = {
             // update all movement
             particle.move();
 
-            // custom update
-            particle.update_more();
-
             // draws image of body
             particle.draw();
+
+            // custom update
+            particle.update_more();
         }
 
         // create draw function
@@ -3822,6 +3822,7 @@ var ParticleBuilder = {
                     ctx.imageSmoothingEnabled = system.scene.antialias;
                     
                     // fill
+                    //ctx.closePath(); // heyer
                     ctx.fill();
                 });
             }
@@ -3856,6 +3857,7 @@ var ParticleBuilder = {
                     ctx.imageSmoothingEnabled = system.scene.antialias;
                     
                     // stroke (borders only)
+                    //ctx.closePath(); // heyer
                     ctx.stroke();
                 });
             }
@@ -3925,27 +3927,6 @@ var ParticleSystemBuilder = {
 
         // create
         switch (data.type) {
-            case ParticleSystemBuilder.TYPES.FIRE:
-                ParticleSystemBuilder.create_fire(sys, data);
-                break;
-            case ParticleSystemBuilder.TYPES.WATER:
-                ParticleSystemBuilder.create_water(sys, data);
-                break;
-            case ParticleSystemBuilder.TYPES.SMOKE:
-                ParticleSystemBuilder.create_smoke(sys, data);
-                break;
-            case ParticleSystemBuilder.TYPES.JET:
-                ParticleSystemBuilder.create_jet(sys, data);
-                break;
-            case ParticleSystemBuilder.TYPES.EXPLOSION:
-                ParticleSystemBuilder.create_explosion(sys, data);
-                break;
-            case ParticleSystemBuilder.TYPES.SPIRAL:
-                ParticleSystemBuilder.create_spiral(sys, data);
-                break;
-            case ParticleSystemBuilder.TYPES.PULSE:
-                ParticleSystemBuilder.create_pulse(sys, data);
-                break;
             default:
                 ParticleSystemBuilder.create_custom(sys, data);
         }
@@ -4109,19 +4090,19 @@ var ParticleSystemBuilder = {
             ctx.imageSmoothingEnabled = sys.scene.antialias;
 
             ctx.translate(sys.pos[0], sys.pos[1]);
-            ctx.rotate(sys.rot);
-            ctx.scale(sys.scale[0], sys.scale[1]);
+            //ctx.rotate(sys.rot); // not working as expected
+            //ctx.scale(sys.scale[0], sys.scale[1]); // not working as expected
             // updates
             var _tmp_ptcs = sys.queue.data();
             for (var i in _tmp_ptcs)
                 _tmp_ptcs[i].update();
             ctx.restore();
 
-            // update custom add-ons
-            sys.update_more();
-
             // update image/transformations
             sys.draw();
+
+            // update custom add-ons
+            sys.update_more();
         }
 
         // create draw function
@@ -4214,56 +4195,5 @@ var ParticleSystemBuilder = {
         // create features of this system's particles
         var template_particle = new Particle(data.particle_data, sys);
         ParticleBuilder.create_features(template_particle, sys, data.particle_data);
-    },
-
-    // utilizes: Same as custom.
-    //
-    // does:     Same as custom, except the base particle data will be altered
-    //           to forcively match this type of particle system. User will
-    //           be able to override only some parameters of the particle data.
-    create_fire : function() {/*TODO*/},
-
-    // utilizes: Same as custom.
-    //
-    // does:     Same as custom, except the base particle data will be altered
-    //           to forcively match this type of particle system. User will
-    //           be able to override only some parameters of the particle data.
-    create_water : function() {/*TODO*/},
-
-    // utilizes: Same as custom.
-    //
-    // does:     Same as custom, except the base particle data will be altered
-    //           to forcively match this type of particle system. User will
-    //           be able to override only some parameters of the particle data.
-    create_smoke : function() {/*TODO*/},
-
-    // utilizes: Same as custom.
-    //
-    // does:     Same as custom, except the base particle data will be altered
-    //           to forcively match this type of particle system. User will
-    //           be able to override only some parameters of the particle data.
-    create_jet : function() {/*TODO*/},
-
-    // utilizes: Same as custom.
-    //
-    // does:     Same as custom, except the base particle data will be altered
-    //           to forcively match this type of particle system. User will
-    //           be able to override only some parameters of the particle data.
-    create_explosion : function() {/*TODO*/},
-
-    // utilizes: Same as custom.
-    //
-    // does:     Same as custom, except the base particle data will be altered
-    //           to forcively match this type of particle system. User will
-    //           be able to override only some parameters of the particle data.
-    create_spiral : function() {/*TODO*/},
-
-    // utilizes: Same as custom.
-    //
-    // does:     Same as custom, except the base particle data will be altered
-    //           to forcively match this type of particle system. User will
-    //           be able to override only some parameters of the particle data.
-    create_pulse : function() {/*TODO*/}
-
+    }
 }
-//*/

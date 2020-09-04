@@ -25,18 +25,20 @@
 import { Game } from '../../scripts/game.js';
 import { DATA } from '../../scripts/data_loader2.js';
 import { GameManager } from '../../scripts/managers/GameManager.js';
-import { GRID_OPTS, FIRE_OPTS, AB_UI_OPTS } from '../scripts/Options.js';
+import { GRID_OPTS, FIRE_OPTS, MENU_UI_OPTS } from '../scripts/Options.js';
 import { Fire } from '../../scripts/projectiles/Fire.js';
 import { View } from '../../scripts/View.js';
+import { actor_builder } from './actor_builder.js';
 import { UIBuilder } from '../../scripts/builders/UIBuilder.js';
 
-export { actor_builder }
+export { menu }
 
 // Module Globals
-var actor_builder = new View();
+var menu = new View();
+//var oob_fire; <---- not working correctly
 
 // Initialize Game Components
-actor_builder.game_init = () => {
+menu.game_init = () => {
 
     // setup
     Nickel.DEBUG = false;
@@ -45,11 +47,14 @@ actor_builder.game_init = () => {
     GameManager.reset();
     GameManager.init(Game);
     GameManager.world = new Grid(GRID_OPTS);
-    GameManager.set_groups(['game'], 'only');
-    UIBuilder.config(AB_UI_OPTS)
+    GameManager.set_groups(['game'], 'only'); // fire is in 'ui' group so it will not be updated
+    UIBuilder.config(MENU_UI_OPTS)
 
     // hide elements
-    $('.actor-builder').show('slow');
+    $('.actor-builder').hide('slow');
+
+    // out of bounds bottom fire
+    //oob_fire = new Fire(Game, FIRE_OPTS);  <--- not working correctly
 
     // press space to reset grid
     GameManager.world.load_updater({
@@ -61,9 +66,9 @@ actor_builder.game_init = () => {
 
     // grid bg color
     var bg = UIBuilder.grid({
-        position : [0,0],
-        width : Game.get_w(),
-        height : Game.get_h()
+        position : [5,5],
+        width : Game.get_w()-10,
+        height : Game.get_h()-10
     });
     /*var bg = new SimplePoly(Game, [
         [0,0],
@@ -93,24 +98,22 @@ actor_builder.game_init = () => {
     }*/
 
     // TODO: Would like to have some default UI presets that i can use... Maybe store these presets in UIBuidler...?
-    // actor_builder labels
+    // menu labels
     var title = UIBuilder.label({
-        text : 'Actor Builder:',
+        text : 'Dev Kit:',
         align : 'left',
         position : [50,50]
     });
-    var main_menu_btn = UIBuilder.text_button({
-        text : 'Main Menu',
+    var actor_builder_btn = UIBuilder.text_button({
+        text : 'Actor Builder',
         align : 'left',
         position : [100,100],
+        size : 4
     });
-    main_menu_btn.on_hover = () =>   { main_menu_btn.image.color = 'yellow'; }
-    main_menu_btn.on_leave = () =>   { main_menu_btn.image.color = UIBuilder.color_secondary; }
-    main_menu_btn.on_click = () =>   { main_menu_btn.image.color = 'orange'; }
-    main_menu_btn.on_release = () => {
-        GameManager.destroy_all();
-        View.previous(actor_builder).init();
-    }
+    actor_builder_btn.on_hover = () =>   { actor_builder_btn.image.color = 'yellow'; }
+    actor_builder_btn.on_leave = () =>   { actor_builder_btn.image.color = UIBuilder.color_secondary; }
+    actor_builder_btn.on_click = () =>   { actor_builder_btn.image.color = 'orange'; }
+    actor_builder_btn.on_release = () => { View.next(actor_builder).init(); }
     /*
     var title = new SimpleText(Game, "Dev Kit:", "Courier", 50, 'red', [50,50], 'left');
     var actor_builder_btn_img = new SimpleImage(Game, null, 0, 0, [0,0], 'gray');
@@ -131,8 +134,9 @@ actor_builder.game_init = () => {
 }
 
 // Game Loop:
-actor_builder.game_loop = () => {
+menu.game_loop = () => {
 
     Game.clear();
+    //oob_fire.update();  <----- not working correctly
     GameManager.handle();
 }

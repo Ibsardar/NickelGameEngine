@@ -611,6 +611,46 @@ class ParticleBulletSystem {
     }
 
     /**
+     * Static: Calls 'update' on all particle bullet systems
+     * EXCEPT groups specified in the groups list parameter.
+     * (excludes deleted, optionally includes destroyed)
+     */
+    static update_except(groups=[], update_destroyed=false) {
+
+        for (var h in ParticleBulletSystem._systems) {
+            if (groups.find(h)) continue;
+            var g = ParticleBulletSystem._systems[h];
+            for (var i in g) {
+                var s = g[i];
+                if (s) {
+                    if (s._state != ParticleBulletSystem.DESTROYED || update_destroyed)
+                        s.update();
+                }
+            }
+        }
+    }
+
+    /**
+     * Static: Calls 'update' on all particle bullet systems
+     * EXCEPT groups NOT specified in the groups list parameter.
+     * (excludes deleted, optionally includes destroyed)
+     */
+    static update_only(groups=[], update_destroyed=false) {
+
+        for (let h of groups) {
+            var g = ParticleBulletSystem._systems[h];
+            if (!g) continue;
+            for (var i in g) {
+                var s = g[i];
+                if (s) {
+                    if (s._state != ParticleBulletSystem.DESTROYED || update_destroyed)
+                        s.update();
+                }
+            }
+        }
+    }
+
+    /**
      * Called once per frame. Updates all changing parameters.
      */
     update() {
@@ -764,6 +804,31 @@ class ParticleBulletSystem {
 
         // remove specified response function from continous events
         this._events[ev].splice(index, 1);
+    }
+
+    /**
+     * Resets all static data to the default values.
+     */
+    static reset() {
+
+        ParticleBulletSystem._scene = null;
+        ParticleBulletSystem._targets = {};
+        ParticleBulletSystem._systems = {};
+        ParticleBulletSystem._quadtrees = {};
+        ParticleBulletSystem._qt_bounds = {
+            x : 0,
+            y : 0,
+            w : 0,
+            h : 0
+        };
+        ParticleBulletSystem._qt_max_objs = 3;
+        ParticleBulletSystem._qt_max_depth = 4;
+        ParticleBulletSystem._trigger_requests = {
+            create : new Queue(),
+            hit : new Queue(),
+            destroy : new Queue(),
+            delete : new Queue()
+        }
     }
 
     /**

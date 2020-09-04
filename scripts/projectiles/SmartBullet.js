@@ -240,6 +240,16 @@ class SmartBullet extends StickyBullet {
         for (var g in ps)
             ps[g] = ps[g].filter(p => p && p._state != SmartBullet.DESTROYED);
     }
+
+    /**
+     * @overrides parent class function.
+     * Resets all static data to the default values.
+     */
+    static reset() {
+
+        StickyBullet.reset();
+        SmartBullet._p_smarties = {};
+    }
     
     /**
      * Static property: Number of smart bullets.

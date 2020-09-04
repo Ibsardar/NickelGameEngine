@@ -20,8 +20,23 @@
 
 import { Game } from "../../scripts/game.js";
 import { DATA } from "../../scripts/data_loader2.js";
+import { GameManager } from "../../scripts/managers/GameManager.js";
 
-export { GRID_OPTS, FIRE_OPTS };
+export { GRID_OPTS, FIRE_OPTS, MENU_UI_OPTS, AB_UI_OPTS };
+
+// UI by view options
+var MENU_UI_OPTS = {
+    scene : Game,
+    manager : GameManager,
+    element_size_4 : [350, 50],
+    weight : 'bold'
+}
+var AB_UI_OPTS = {
+    scene : Game,
+    manager : GameManager,
+    element_size_4 : [350, 50],
+    weight : 'bold'
+}
 
 // all of these are used in GRID_OPTS
 var grid_bg, grid_scroll, grid_rot, grid_zoom, grid_lims, grid_nav;
@@ -87,12 +102,12 @@ var GRID_OPTS = {
 var fire_ptc, fire_ps, fire_turbulence;
 var fire_ptc = {
     context                 : Game.context,
-    shape                   : ParticleBuilder.TYPES.RECTANGLE,
+    shape                   : ParticleBuilder.TYPES.ELLIPSE,
     enable_translation      : true,
-    enable_rotation         : true,
+    enable_rotation         : false,
     enable_scaling          : true,
     enable_transparency     : true,
-    enable_fill             : false,
+    enable_fill             : true,
     enable_stroke           : false
 }
 var fire_ps = {
@@ -100,12 +115,12 @@ var fire_ps = {
     scene                   : Game,
     lifetime_mseconds       : Infinity,
     position                : [0,0],
-    rotation                : 0, // experimental
-    scale                   : [1,1], // experimental
-    create_amount           : 5,
+    rotation                : 0, // experimental <-- probably does not work either
+    scale                   : [3,3], // experimental <- does not work
+    create_amount           : 3,
     //create_amount_var       : [-3,3],
     //create_amount_bounds    : [7,11],
-    create_period_mseconds  : 18
+    create_period_mseconds  : 50
     //create_period_var       : [-3,3],
     //create_period_bounds    : [1,25]
 }
@@ -113,12 +128,12 @@ var fire_turbulence = {
     v0x :                   [-0.35,0.35]
 }
 
-// option data for Fire
+// option data for Fire (UI Fire)
 var FIRE_OPTS = {
     particle_sys_data :     fire_ps,
     script_effect :         null,
     targets :               [],
-    group :                 't',
+    group :                 'ui',
     damage :                0,
     health :                1,
     snd_create :            null,//DATA.SND.COIN,

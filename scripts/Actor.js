@@ -357,14 +357,53 @@ class Actor {
      * Static: Calls 'update' on all actors.
      * (excludes deleted, excludes destroyed)
      */
-    static update_all() {
+    static update_all(update_destroyed=false) {
 
         for (var h in Actor._actors) {
             var g = Actor._actors[h];
             for (var i in g) {
                 var a = g[i];
                 if (a) {
-                    a.update();
+                    if (a._state != Actor.DESTROYED || update_destroyed)
+                        a.update();
+                }
+            }
+        }
+    }
+
+    /**
+     * Static: Calls 'update' on all actors.
+     * (excludes deleted, excludes destroyed)
+     */
+    static update_except(groups=[], update_destroyed=false) {
+
+        for (var h in Actor._actors) {
+            if (groups.find(h)) continue;
+            var g = Actor._actors[h];
+            for (var i in g) {
+                var a = g[i];
+                if (a) {
+                    if (a._state != Actor.DESTROYED || update_destroyed)
+                        a.update();
+                }
+            }
+        }
+    }
+
+    /**
+     * Static: Calls 'update' on all actors.
+     * (excludes deleted, excludes destroyed)
+     */
+    static update_only(groups=[], update_destroyed=false) {
+
+        for (let h of groups) {
+            var g = Actor._actors[h];
+            if (!g) continue;
+            for (var i in g) {
+                var a = g[i];
+                if (a) {
+                    if (a._state != Actor.DESTROYED || update_destroyed)
+                        a.update();
                 }
             }
         }
@@ -657,6 +696,28 @@ class Actor {
                 data.body.scale[0] ?? 1,
                 data.body.scale[1] ?? 1
             );
+    }
+
+    /**
+     * Resets all static data to the default values.
+     */
+    static reset() {
+
+        Actor._scene = null;
+        Actor._targets = {};
+        Actor._actors = {};
+        Actor._quadtrees = {};
+        Actor._qt_bounds = {
+            x : 0,
+            y : 0,
+            w : 0,
+            h : 0
+        };
+        Actor._qt_max_objs = 3;
+        Actor._qt_max_depth = 4;
+        Actor._create_trigger_queue = new Queue();
+        Actor._destroy_trigger_queue = new Queue();
+        Actor._action_complete_trigger_queue = new Queue();
     }
 
     /**

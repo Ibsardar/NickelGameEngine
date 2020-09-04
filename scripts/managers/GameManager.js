@@ -27,6 +27,7 @@ import { ParticleBulletSystem } from "../projectiles/ParticleBulletSystem.js";
 import { GlowPBS } from "../projectiles/GlowPBS.js";
 import { Fire } from "../projectiles/Fire.js";
 import { Actor } from "../Actor.js";
+import { Game } from "../game.js";
 
 export { GameManager, GameManager as GaMa }; // also export an alias
 
@@ -59,6 +60,15 @@ class GameManager {
 
     // list of groups to be updated
     static active_group_name_list = [];
+
+    // list of groups to update if update type is WHITELIST
+    // list of groups to not update if update type is BLACKLIST
+    // has no effect if update type is UNRESTRICTED
+    static _groups = [];
+
+    // how is updating restricted? WHITELIST, BLACKLIST, or UNRESTRICTED?
+    // (see GameManager constants)
+    static _update_type = 0; // default UNRESTRICTED
 
     /**
      * Sets the scene.
@@ -127,14 +137,27 @@ class GameManager {
      */
     static update() {
 
-        // projectiles
-        Projectile.update_all();
+        if (GameManager._update_type == GameManager.UNRESTRICTED) {
 
-        // particles
-        ParticleBulletSystem.update_all();
+            // static class update calls
+            Projectile.update_all();
+            ParticleBulletSystem.update_all();
+            Actor.update_all();
 
-        // actors
-        Actor.update_all();
+        } else if (GameManager._update_type == GameManager.WHITELIST) {
+
+            // static class update calls
+            Projectile.update_only(GameManager._groups);
+            ParticleBulletSystem.update_only(GameManager._groups);
+            Actor.update_only(GameManager._groups);
+
+        } else if (GameManager._update_type == GameManager.BLACKLIST) {
+
+            // static class update calls
+            Projectile.update_except(GameManager._groups);
+            ParticleBulletSystem.update_except(GameManager._groups);
+            Actor.update_except(GameManager._groups);
+        }
     }
 
     /**
@@ -155,6 +178,49 @@ class GameManager {
     }
 
     /**
+     * Destroys everything including projectiles, particles,
+     * actors, the world (if set) and everything in it, etc...
+     */
+    static destroy_all() {
+
+        GameManager._world = null;
+        Fire.reset();
+        SmartBullet.reset();
+        Actor.reset();
+        Skeleton.reset();
+    }
+
+    /**
+     * Resets all the static variables.
+     */
+    static reset() {
+
+        GameManager.scene = null;
+        GameManager._world = null;
+        GameManager.max_projectiles_per_group_until_gc = null;
+        GameManager.max_particles_per_group_until_gc = null;
+        GameManager.trigger_delete_events_flag = null;
+        GameManager.active_group_name_list = [];
+        GameManager._groups = [];
+        GameManager._update_type = 0;
+    }
+
+    /**
+     * Set groups to update only/except/all. This will affect the
+     * updating of Actors, Projectiles, and articleBulletSystems.
+     * 
+     * @param {String[]} groups list of group names to include/exclude
+     * @param {String} type 'all' to allow all groups, 'only' to allow certain, or 'except' to restrict certain
+     */
+    static set_groups(groups=[], type='all') {
+
+        GameManager._groups = groups;
+        if (type == 'only') GameManager._update_type = GameManager.WHITELIST;
+        else if (type == 'except') GameManager._update_type = GameManager.BLACKLIST;
+        else GameManager._update_type = GameManager.UNRESTRICTED;
+    }
+
+    /**
      * Grid Object representing the game's worldspace.
      * 
      * @type {Grid|null} Grid or null
@@ -163,11 +229,36 @@ class GameManager {
     static set world(grid) {
         if (grid instanceof Grid) {
             GameManager._world = grid;
+            var len = GameManager._world.get_load().length;
+            if (len)
+                console.warn('WARNING: GameManager>set world: Grid is drawing on top of '+len+' objects already in the world.')
             GameManager._world.load_updater({ update : GameManager._handle });
         } else if (!grid)
             GameManager._world = null;
         else
             console.error('ERROR: GameManager>set world: expecting instance of Grid (or falsey to unset).');
     }
+
+    /**
+     * List of group names to (only/not) update.
+     * 
+     * @type {String[]} list of group names
+     */
+    static get groups() { return GameManager._groups; }
+
+    /**
+     * Value representing current updating behaviour constant.
+     * - 0 : UNRESTRICTED
+     * - 1 : WHITELIST
+     * - 2 : BLACKLIST
+     * 
+     * @type {Number} updating behaviour constant
+     */
+    static get update_type() { return GameManager._update_type; }
+
+    /// (Static Constant) Group updating types.
+    static get UNRESTRICTED ()  { return 0; }
+    static get WHITELIST    ()  { return 1; }
+    static get BLACKLIST    ()  { return 2; }
 
 }//end class

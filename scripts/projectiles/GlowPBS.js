@@ -174,8 +174,9 @@ class GlowPBS extends ParticleBulletSystem {
             if (sys.glow) {
 
                 // draw glow
-                var ctx = p.sys.scene.context;
-                ctx.save();
+                var ctx = p.sys.scene.context;   // <--------- THIS IS WRONG, IT IS PRINTING ONTO THE MAIN CANVAS
+                //var ctx = p.sys.context;       //            WHEN ACTUALLY IT SHOULD BE PRINTING ONTO THE BUFFER!!!
+                ctx.save();                      // <--------- SHOULDN'T NEED THIS IF WE ARE PRINTING TO BUFFER
 
                 ///    RADIAL GRADIENT METHOD
                 // NOTE : intensity here equals starting opacity of glow
@@ -210,6 +211,7 @@ class GlowPBS extends ParticleBulletSystem {
                     outer_radius,
                     0,
                     2*Math.PI);
+                
                 ctx.fill();
 
                 /***
@@ -240,7 +242,7 @@ class GlowPBS extends ParticleBulletSystem {
                 for (var i=0; i<p._glow[3]; i++)
                     ctx.stroke();
                 ***/
-                ctx.restore();
+                ctx.restore();                   // <--------- SHOULDN'T NEED THIS IF WE ARE PRINTING TO BUFFER
             }
         });
     }

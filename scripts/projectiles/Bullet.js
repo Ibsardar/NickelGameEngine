@@ -202,6 +202,16 @@ class Bullet extends Projectile {
             c += this._p_bullets[g].length;
         return c;
     }
+
+    /**
+     * @overrides parent class function.
+     * Resets all static data to the default values.
+     */
+    static reset() {
+
+        Projectile.reset();
+        Bullet._p_bullets = {};
+    }
     
     /**
      * The ParticleSystem which emits from behind and underneath

@@ -433,6 +433,46 @@ class Projectile {
     }
 
     /**
+     * Static: Calls 'update' on all projectiles EXCEPT
+     * groups specified in the groups list parameter..
+     * (excludes deleted, optionally includes destroyed)
+     */
+    static update_except(groups=[], update_destroyed=false) {
+
+        for (var h in Projectile._projectiles) {
+            if (groups.find(h)) continue;
+            var g = Projectile._projectiles[h];
+            for (var i in g) {
+                var p = g[i];
+                if (p) {
+                    if (p._state != Projectile.DESTROYED || update_destroyed)
+                        p.update();
+                }
+            }
+        }
+    }
+
+    /**
+     * Static: Calls 'update' on all projectiles EXCEPT
+     * groups NOT specified in the groups list parameter..
+     * (excludes deleted, optionally includes destroyed)
+     */
+    static update_only(groups=[], update_destroyed=false) {
+
+        for (let h of groups) {
+            var g = Projectile._projectiles[h];
+            if (!g) continue;
+            for (var i in g) {
+                var p = g[i];
+                if (p) {
+                    if (p._state != Projectile.DESTROYED || update_destroyed)
+                        p.update();
+                }
+            }
+        }
+    }
+
+    /**
      * Called once per frame. Updates all changing parameters.
      */
     update() {
@@ -533,6 +573,25 @@ class Projectile {
 
         // remove specified response function from continous events
         this._events[ev].splice(index, 1);
+    }
+
+    /**
+     * Resets all static data to the default values.
+     */
+    static reset() {
+        
+        Projectile._scene = null;
+        Projectile._targets = {};
+        Projectile._projectiles = {};
+        Projectile._quadtrees = {};
+        Projectile._qt_bounds = {
+            x : 0,
+            y : 0,
+            w : 0,
+            h : 0
+        };
+        Projectile._qt_max_objs = 3;
+        Projectile._qt_max_depth = 4;
     }
 
     /**
