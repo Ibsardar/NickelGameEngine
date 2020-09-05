@@ -51,7 +51,7 @@ menu.game_init = () => {
     UIBuilder.config(MENU_UI_OPTS)
 
     // hide elements
-    $('.actor-builder').hide('slow');
+    $('.dk-rnav').hide('slow');
 
     // out of bounds bottom fire
     oob_fire = new Fire(Game, FIRE_OPTS);  //<--- not working correctly

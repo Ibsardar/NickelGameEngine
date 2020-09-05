@@ -91,8 +91,13 @@
     color: rgb(219, 88, 0);
     font-family: Montserrat, Courier, sans-serif;
     font-weight: bold;
-    padding: 0.75em 2.5em;
     text-decoration: none;
+    padding-top: 1%;
+    padding-bottom: 1%;
+    overflow: hidden;
+    z-index: 2;
+    position: sticky;
+    width: 100%;
 }
 
 .dk-normal {
@@ -120,14 +125,13 @@
 .dk-tray {
     display: inline-block;
     min-height: 40px;
-    min-width: 600px;
     background-color: #ebebeb;
     color: rgb(206, 206, 206);
     font-family: Courier, Verdana;
 
     padding: 20px;
     margin: 10px;
-    font-size: 3em;
+    font-size: 1.5em;
     font-weight: normal;
     line-height: 1.3em;
     border: 2px dashed rgb(211, 186, 169);
@@ -143,4 +147,38 @@
     background-color: #fffecd;
     box-shadow: 0 0 0 4px #fffecd, 4px 2px 12px 8px rgba(10, 10, 0, 0.5);
     border: 2px dashed rgb(206, 206, 206);
+    cursor: pointer;
+}
+
+.dk-inline {
+    display: inline-block
+}
+
+.dk-rnav {
+    height: 100%;
+    width: 20%;
+    position: fixed;
+    z-index: 1;
+    top: 80px;
+    right: 0;
+    background-color: #ebebeb;
+    overflow-x: hidden;
+    padding: 8px 8px;
+}
+
+.dk-rnav div,span {
+    padding: 6px 8px 6px 16px;
+    text-decoration: none;
+    font-size: 25px;
+    color: #818181;
+    display: block;
+}
+
+.dk-main-rnav {
+    margin-right: 20%; /* Same as the width of the sidenav */
+    padding: 0px 8px;
+}
+
+.dk-active {
+    background-color: gold;
 }

@@ -372,6 +372,11 @@ class CombatManager {
         target._health = new_health;
     }
 
+    /**
+     * 
+     * @param {*} effect 
+     * @param {*} target 
+     */
     static effect_vs_target(effect, target) {
 
         // setup

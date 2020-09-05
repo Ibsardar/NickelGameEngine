@@ -2043,6 +2043,7 @@ var NavNodeBuilder = {
             node.spr = new Sprite(node.data.grid.scene, node.data.spr_data, true);
             node.spr.bound = function() {};
             node.spr.set_origin_centered();
+            node.spr.hull.recalibrate();
             node.til = node.data.tile;
 
             node.update = function() {
@@ -2069,7 +2070,7 @@ var NavNodeBuilder = {
 ////////////////////////////////////////////
 ///   LOCOMOTIVE BUILDER   /////////////////
 ////////////////////////////////////////////
-/**@todo: make the implementations of each function static */
+/**@todo: make the implementations of each function static --> maybe convert to a Module */
 var LocomotiveBuilder = {
 
     create_locomotive : function(loco_data) {

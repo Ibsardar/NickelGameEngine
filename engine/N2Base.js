@@ -286,6 +286,7 @@ var Nickel = {
         mult_s :    __nhelpers.scalar_product,
         div_s :     __nhelpers.scalar_divide,
         copy :      __nhelpers.copy_vector,
+        cp :        __nhelpers.copy_vector, // alias of above
         eq :        __nhelpers.is_equal
     },//end .v2d shortcut
 
@@ -1812,6 +1813,7 @@ function Viewport(html_canvas_element_id) {
     this.key_downs = Array(256);
     this.key_curr  = null;
     this.key_upped = null;
+    this.allow_keyboard = true;
 
 
 
@@ -1873,12 +1875,14 @@ function Viewport(html_canvas_element_id) {
         // update pressed key value(s)
         document.onkeydown = function(ev) {
             //console.log("Keydown! " + ev.key);
-            //function keys default action will not be ignored:
-            if (ev.key != 'F1'  && ev.key != 'F2'  && ev.key != 'F3' &&
-                ev.key != 'F4'  && ev.key != 'F5'  && ev.key != 'F6' &&
-                ev.key != 'F7'  && ev.key != 'F8'  && ev.key != 'F9' &&
-                ev.key != 'F10' && ev.key != 'F11' && ev.key != 'F12') {
-                ev.preventDefault();
+            //function keys default action will never be ignored:
+            if (!self.allow_keyboard) {
+                if (ev.key != 'F1'  && ev.key != 'F2'  && ev.key != 'F3' &&
+                    ev.key != 'F4'  && ev.key != 'F5'  && ev.key != 'F6' &&
+                    ev.key != 'F7'  && ev.key != 'F8'  && ev.key != 'F9' &&
+                    ev.key != 'F10' && ev.key != 'F11' && ev.key != 'F12') {
+                        ev.preventDefault();
+                }
             }
             self.key_downs[ev.keyCode] = true;
             self.key_curr = ev.keyCode;
@@ -5259,6 +5263,8 @@ function BoundingBox(sprite) {
 ///   COLLIDER HULL   //////////////////////
 ////////////////////////////////////////////
 function ColliderHull(sprite, approximate=true) {
+    // MAIN ISSUE currently: set_pos2 only works if the sprite is unscaled and unrotated
+    // the only time a collision hull can be set is before transforming the sprite
 
     // TODO: TEST EXTENSIVELY
     // (this, simple shapes, and some collision_detection functions)
@@ -5282,7 +5288,7 @@ function ColliderHull(sprite, approximate=true) {
         // create rectangle matching the sprite's basic dimensions
         this.shape = new SimplePoly(this.parent.scene,
                                     [tl,tr,br,bl],
-                                    true, this.parent.get_pos2());  // TODO: CHECK IF STILL A PROBLEM: THE PARENT ORIGIN POINT MAY NOT BE THE TRUE ORIGIN (BIG PROBLEM EEK)
+                                    true, this.parent.get_pos2()); // issue // TODO: CHECK IF STILL A PROBLEM: THE PARENT ORIGIN POINT MAY NOT BE THE TRUE ORIGIN (BIG PROBLEM EEK)
     }
 
     // keep track of how much shape has rotated and scaled
@@ -5314,7 +5320,7 @@ function ColliderHull(sprite, approximate=true) {
         // dimensions of parent don't make sense)
         if (!this.updated) {
             this.updated = true;
-            var par_pos = this.parent.get_pos2();
+            var par_pos = this.parent.get_pos2(); // issue?
             var hul_pos = this.shape.get_tracker();
             var diff = [par_pos[0] - hul_pos[0], par_pos[1] - hul_pos[1]];
 
@@ -5362,7 +5368,20 @@ function ColliderHull(sprite, approximate=true) {
         // create rectangle matching the sprite's basic dimensions
         this.shape = new SimplePoly(this.parent.scene,
                                     [tl,tr,br,bl],
-                                    true, this.parent.get_pos2());
+                                    true, this.parent.get_pos2()); // issue
+    }
+
+    this.recalibrate = function() {
+        //--    Attempts to re-position the hull relative to the
+        //--    Sprite. ONLY USE when sprite is NOT rotated or
+        //--    scaled. Will ACTUALLY reposition the hull once a
+        //--    hull update is triggered.
+        //--
+
+        this.shape.set_tracker([
+            this.shape.x + this.parent.origin[0],
+            this.shape.y + this.parent.origin[1]
+        ]);
     }
 
     this.set_shape = function(simple_shape) {
@@ -5372,7 +5391,7 @@ function ColliderHull(sprite, approximate=true) {
 
         this.shape = simple_shape;
         if (!simple_shape.get_tracker())
-            simple_shape.set_tracker(this.parent.get_pos2());
+            simple_shape.set_tracker(this.parent.get_pos2()); // issue
         this.updated = false;
         this.update_transformations();
     }
@@ -5384,7 +5403,7 @@ function ColliderHull(sprite, approximate=true) {
         
         var new_hull = new ColliderHull(spr, false);
         new_hull.set_shape(this.shape.copy_base());
-        new_hull.shape.set_tracker(spr.get_pos2());
+        new_hull.shape.set_tracker(spr.get_pos2()); // issue
         
         return new_hull;
     }
@@ -7291,6 +7310,9 @@ function SpriteSelector(scene) {
         left : {}
     };
 
+    // for efficiency purposes
+    this.last_calculated_mpos = [0,0];
+
 
     // --
     // ------- ESSENTIAL methods ---------------------------------
@@ -7308,6 +7330,7 @@ function SpriteSelector(scene) {
 
         // get cursor position
         var mpos = this.mouse_func(this.scene.mouse_x, this.scene.mouse_y);
+        this.last_calculated_mpos = mpos;
         var mx = mpos[0];
         var my = mpos[1];
 
@@ -7586,6 +7609,7 @@ function SpriteSelector(scene) {
         //--
 
         var mpos = this.mouse_func(this.scene.mouse_x, this.scene.mouse_y);
+        this.last_calculated_mpos = mpos;
         return this.get_under_point(sprites,mpos[0],mpos[1],sorted);
     }
 

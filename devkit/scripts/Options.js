@@ -51,7 +51,11 @@ grid_scroll = {
     buffer   : 16, 
     speed    : 9,
     controls : {
-        mouse: true
+        mouse: false,
+        right: Nickel.KEYCODES.LEFTARROW,
+        down: Nickel.KEYCODES.UPARROW,
+        left: Nickel.KEYCODES.RIGHTARROW,
+        up: Nickel.KEYCODES.DOWNARROW,
     }
 }
 grid_rot = null;
@@ -122,7 +126,7 @@ var fire_ps = {
     lifetime_mseconds       : Infinity,
     position                : [0,0],
     rotation                : 0, // experimental <-- probably does not work either
-    scale                   : [3,3], // experimental <- does not work
+    scale                   : [1,1], // experimental <- does not work
     create_amount           : 3,
     //create_amount_var       : [-3,3],
     //create_amount_bounds    : [7,11],
@@ -131,7 +135,8 @@ var fire_ps = {
     //create_period_bounds    : [1,25]
 }
 var fire_turbulence = {
-    v0x :                   [-0.35,0.35]
+    v0x :                   [-0.35,0.35],
+    //v0y :                   [0,1]
 }
 
 // option data for Fire (UI Fire)
@@ -167,6 +172,6 @@ var FIRE_OPTS = {
                                 ['red', 'hotpink', 'pink', 'lightpink'],
                             ]),
     turbulence :            fire_turbulence,
-    temperature_calculation_max : 1200,
-    force :                 [0,0.025]
+    temperature_calculation_max : 2000,
+    force :                 [0,-0.025]
 }

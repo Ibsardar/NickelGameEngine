@@ -32,7 +32,7 @@ export { Limb };
  */
 class Limb {
 
-    /// Default constructor.
+    /// Default constructor. (img_data can be an Image or {img:url, w:#, h:#})
     constructor(scene, img_data=false, collidable=false, overlap=true, offsets={}, pivot=null, is_loco=false) {
 
         this._limb_node = new TreeNode(this);
@@ -42,8 +42,9 @@ class Limb {
             this.img_data = img_data;
             this.sprite = new Sprite(scene, img_data, true, null, collidable);
             this.sprite.bound = () => {};
-            if (!pivot) this.sprite.set_origin_centered();
-            else if (pivot) this.sprite.set_origin(pivot);
+            if (pivot) this.sprite.set_origin(pivot);
+            else this.sprite.set_origin_centered();
+            this.sprite.hull.recalibrate();
             if (is_loco) this.sprite = new Locomotive({sprite: this.sprite});
         
         // if no sprite, we assume an 'empty' limb where no sprite exists
@@ -670,8 +671,9 @@ class Limb {
         // new sprite
         this.sprite = new Sprite(scene, img_data, true, null, collidable);
         this.sprite.bound = () => {};
-        if (!pivot) this.sprite.set_origin_centered();
-        else if (pivot) this.sprite.set_origin(pivot);
+        if (pivot) this.sprite.set_origin(pivot);
+        else this.sprite.set_origin_centered();
+        this.sprite.hull.recalibrate();
         if (is_loco) this.sprite = new Locomotive({sprite: this.sprite});
         if (off_pos) this._body_offset.pos = Nickel.v2d.copy(off_pos);
         if (off_rot || off_rot === 0) this._body_offset.rot = off_rot;
@@ -692,6 +694,7 @@ class Limb {
         this.sprite.set_pic(img_data);
         if (origin === true) this.sprite.set_origin_centered();
         else if (origin) this.sprite.set_origin(Nickel.v2d.copy(origin));
+        if (origin) this.sprite.hull.recalibrate();
         if (off_pos) this._body_offset.pos = Nickel.v2d.copy(off_pos);
         if (off_rot || off_rot === 0) this._body_offset.rot = off_rot;
         if (off_siz) this._body_offset.siz = Nickel.v2d.copy(off_siz);

@@ -51,14 +51,41 @@
     <link rel="shortcut icon" href="">
 </head>
 
-<body class="ctr dk-light">
-    <div class="ck-ctr dk-header"> Nickel Game Engine Development Kit </div>
-    <div id="main" class="dk-ctr">
-        <div id="tray" class="dk-tray actor-builder" onclick="document.getElementById('tray-img-loader').click();">
-            <input type="file" accept="image/*" id="tray-img-loader" style="display: none;">
-            <div class="dk-ctr dk-mid">LOAD AN IMAGE</div>
+<body class="dk-light">
+    <div class="dk-ctr dk-header"> Nickel Game Engine Development Kit </div>
+    <div class="">
+        <div class="dk-main-rnav">
+            <br>
+            <div id="main" class="dk-inline">
+            </div>
         </div>
-        <br>
+        <div class="dk-rnav">
+            <div id="tray" class="dk-tray actor-builder" onclick="document.getElementById('tray-img-loader').click();">
+                <input type="file" accept="image/*" id="tray-img-loader" style="display: none;">
+                <div class="dk-ctr dk-mid">LOAD AN IMAGE</div>
+            </div>
+            <span>Name: </span>
+            <input class='dk-inline' value="">
+            <span>Relative URL: </span>
+            <input class='dk-inline' value="./">
+            <span>Size: </span>
+            <input class='dk-inline' value="0" disabled>
+            <input class='dk-inline' value="0" disabled>
+            <span>Scale: </span>
+            <input type='number' id='scale-x' class='dk-inline' value="" placeholder="x">
+            <input type='number' id='scale-y' class='dk-inline' value="" placeholder="y">
+            <span>Position: </span>
+            <input type='number' id='pos-x' class='dk-inline' value="" placeholder="x">
+            <input type='number' id='pos-y' class='dk-inline' value="" placeholder="y">
+            <span>Pivot: </span>
+            <input type='number' id='pivot-x' class='dk-inline' value="" placeholder="x">
+            <input type='number' id='pivot-y' class='dk-inline' value="" placeholder="y">
+            <br><br><button type="button">Set Body Mode</button>
+            <br><br><button type="button" class="dk-active">Select Mode</button>
+            <br><br><button type="button">Pivot Mode</button>
+            <br><br><button type="button">Connect Mode</button>
+            <br><br><button type="button">Joint Mode</button>
+        </div>
     </div>
 </body>
 </html>
@@ -92,7 +119,7 @@
         }) ();
     }
 
-    function load_limb() { /* override */ }
+    function load_limb(img) { /* override */ }
 
     // call on page load
     $(document).ready(function() {
@@ -106,10 +133,14 @@
             reader.onload = (event) => {
                 var img = new Image();
                 img.src = event.target.result;
-                img.width = 4;
-                img.height = 4;
                 img.onload = () => {
-                    load_limb(img);
+                    //img.width = img.naturalWidth;
+                    //img.height = img.naturalHeight;
+                    load_limb({
+                        img: img.src,
+                        w: img.naturalWidth,
+                        h: img.naturalHeight
+                    });
                 }
             }
         }, false);
