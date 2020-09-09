@@ -37,15 +37,32 @@ export { actor_builder }
 // Module Globals
 var actor_builder = new View();
 var limbs = [];
+var actual_limbs = [];
 var selected;
 
 // Set global function (set in devkit.html) to load an image as a Limb object
 load_limb = (image) => {
 
+    // load image as limb and set in center of view
     var limb = new Limb(Game, image, true);
-    limb.sprite.set_center(Game.get_w()/2, Game.get_h()/2);
+    var ctr = GameManager.world.get_grid_point([Game.get_w()/2, Game.get_h()/2]);
+    limb.sprite.set_center(ctr[0], ctr[1]);
     limbs.push(limb.sprite);
-    GameManager.world.load_updater(limb);
+    actual_limbs.push(limb);
+    limb.sprite.__i = limbs.length - 1;
+    GameManager.world.load_updater(limb); // implement GARBAGE COLLECTION inside Grid
+
+    // select sprite and update properties on right hand side
+    // also auto-resize if too small
+    selected = limb.sprite;
+    if (selected.get_width() < 32 && selected.get_height() < 32)
+        selected.set_scale(5);
+    $('#scale-x').val(selected ? selected.get_scalex() : '');
+    $('#scale-y').val(selected ? selected.get_scaley() : '');
+    $('#pos-x').val(selected ? selected.get_x() : '');
+    $('#pos-y').val(selected ? selected.get_y() : '');
+    $('#pivot-x').val(selected ? selected.get_origin()[0] : '');
+    $('#pivot-y').val(selected ? selected.get_origin()[1] : '');
 }
 
 // Initialize Game Components
@@ -92,8 +109,42 @@ actor_builder.game_init = () => {
             
             if (Game.key_upped == Nickel.KEYCODES.SPACE)
                 GameManager.world.reset_transform();
+
+            Interact.onhover(limbs)
+                .top()
+                .enter((spr,mpos) => {console.log('onhover>top>enter>'+spr.id+'@'+mpos)})
+                .while((spr,mpos) => {console.log('onhover>top>while>'+spr.id+'@'+mpos)})
+                .leave((spr,mpos) => {console.log('onhover>top>leave>'+spr.id+'@'+mpos)})
+                .else((mpos) => {/*console.log('onhover>top>else>[no sprite]@'+mpos)*/});
+
+            Interact.onhover(limbs)
+                .all_reversed()
+                .enter((sprs,mpos) => {console.log('onhover>top>enter>[('+sprs.length+') sprites]@'+mpos)})
+                .while((sprs,mpos) => {console.log('onhover>top>while>[('+sprs.length+') sprites]@'+mpos)})
+                .leave((sprs,mpos) => {console.log('onhover>top>leave>[('+sprs.length+') sprites]@'+mpos)})
+                .else((mpos) => {/*console.log('onhover>top>else>[no sprite]@'+mpos)*/});
+
+            Interact.onrightclick(limbs)
+                .top()
+                .do((spr,mpos) => {
+                    console.log('onrightclick>top>do>'+spr.id+'@'+mpos);
+                    if (selected && selected.__i === spr.__i) {
+                        selected = null;
+                        console.log('Sprite unselected!');
+                        actual_limbs[spr.__i].destroy(false);
+                        console.log('Sprite destroyed! ID# '+spr.id);
+                        limbs.splice(spr.__i, 1);
+                    } else {
+                        actual_limbs[spr.__i].destroy(false);
+                        console.log('Sprite destroyed! ID# '+spr.id);
+                        limbs.splice(spr.__i, 1);
+                    }
+                })
+                .else((mpos) => {
+                    console.log('onrightclick>top>do>else>[no sprite]@'+mpos);
+                });
                 
-            Interact.clicked(limbs)
+            Interact.onleftclick(limbs)
                 .top()
                 .do((spr,mpos) => {
                     console.log('onleftclick>top>do>'+spr.id+'@'+mpos);
@@ -105,15 +156,15 @@ actor_builder.game_init = () => {
                     selected = null;
                     console.log('Sprite unselected!');
                 });
-            Interact.clicked(limbs)
+            Interact.onleftclick(limbs)
                 .bottom()
                 .do((spr,mpos) => console.log('onleftclick>bottom>do>'+spr.id+'@'+mpos));
-            Interact.clicked(limbs)
+            Interact.onleftclick(limbs)
                 .all()
-                .do((sprs,mpos) => console.log('onleftclick>all>do>'+sprs.length+'@'+mpos));
-            Interact.clicked(limbs)
+                .do((sprs,mpos) => console.log('onleftclick>all>do>[('+sprs.length+') sprites]@'+mpos));
+            Interact.onleftclick(limbs)
                 .all_reversed()
-                .do((sprs,mpos) => console.log('onleftclick>all_reversed>do>'+sprs.length+'@'+mpos));
+                .do((sprs,mpos) => console.log('onleftclick>all_reversed>do>[('+sprs.length+') sprites]@'+mpos));
 
             Interact.drag(limbs)
                 .start((spr,mpos) => console.log('drag>start>'+spr.id+'@'+mpos))
@@ -128,7 +179,8 @@ actor_builder.game_init = () => {
     var bg = UIBuilder.grid({
         position : [0,0],
         width : Game.get_w(),
-        height : Game.get_h()
+        height : Game.get_h(),
+        grid_color : '#434343'
     });
 
     // actor_builder labels

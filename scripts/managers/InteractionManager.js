@@ -28,7 +28,7 @@ import { Limb } from "../Limb.js";
 export { InteractionManager, InteractionManager as Interact }; // also export an alias
 
 /**
- * @todo re-allocate chain function definitions to static private members.
+ * @todo re-allocate chain function definitions to static private members. (anonymous functions are created on call, unlike static members)
  * @class InteractionManager
  * 
  * Static class - handles various types of user interactions.
@@ -44,8 +44,15 @@ class InteractionManager {
     static last_mpos;
 
     /// Internal categorical vars
+    /**@todo these SHOULD NOT BE STATIC. Instead, for each function call associated with an interaction
+     *                                   (like onclick or onhover), save the according data for it.
+     */
     
     static _lmb_click_data = {
+        pressed : false
+    }
+
+    static _mmb_click_data = {
         pressed : false
     }
 
@@ -59,146 +66,40 @@ class InteractionManager {
         pressed : false
     }
 
+    /** idea:
+     *  _hover_data = [
+     *      {...}, {...}, {...}
+     * ]
+     * 
+     * then use InteractionManager.update to update everything -> requires major refactoring
+     * 
+     * problem: currently, hover can only be used once...
+     */
     static _hover_data = {
-
+        last : null,
+        over_group : false
     }
 
     /// Main interaction functions
 
     static onleftclick(items) {
 
-        // allows for chaining event callbacks
-        var chain;
-        var sub_chain;
-        sub_chain = {
-            do : (callback) => sub_chain,
-            else : (callback) => sub_chain
-        }
-        chain = {
-            top : (sort_by) => sub_chain,
-            bottom : (sort_by) => sub_chain,
-            all : (sort_by) => sub_chain,
-            all_reversed : (sort_by) => sub_chain
-        }
-
-        // check for an unpressed lmb
-        if (Game.mouse_upped === 0) {
-
-            // stop pressing
-            if (!InteractionManager.deferred_resets)
-                InteractionManager._lmb_click_data.pressed = false;
-
-        // check for a first time lmb click
-        } else if (Game.mouse_curr === 0 && !InteractionManager._lmb_click_data.pressed) {
-
-            // start pressing
-            if (!InteractionManager.deferred_resets)
-                InteractionManager._lmb_click_data.pressed = true;
-
-            // trigger chain
-            chain.top = (sort_by = (s) => s.id) => {
-
-                InteractionManager.calc_mouse();
-                var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
-                var under = InteractionManager.sprite_under_point(items, InteractionManager.last_mpos, sort_by, false);
-                if (under) {
-
-                    // trigger event
-                    sub_chain.do = (f = (spr, ptr) => sub_chain) => {
-                        f(under,saved);
-                        return sub_chain;
-                    }
-                } else {
-
-                    // trigger event
-                    sub_chain.else = (f = (ptr) => sub_chain) => {
-                        f(saved);
-                        return sub_chain;
-                    }
-                }
-
-                return sub_chain;
-            }
-            chain.bottom = (sort_by = (s) => s.id) => {
-
-                InteractionManager.calc_mouse();
-                var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
-                var under = InteractionManager.sprite_under_point(items, InteractionManager.last_mpos, sort_by, true);
-                if (under) {
-
-                    // trigger event
-                    sub_chain.do = (f = (spr, ptr) => sub_chain) => {
-                        f(under,saved);
-                        return sub_chain;
-                    }
-                } else {
-
-                    // trigger event
-                    sub_chain.else = (f = (ptr) => sub_chain) => {
-                        f(saved);
-                        return sub_chain;
-                    }
-                }
-
-                return sub_chain;
-            }
-            chain.all = (sort_by = (s) => s.id) => {
-
-                InteractionManager.calc_mouse();
-                var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
-                var unders = InteractionManager.sprites_under_point(items, InteractionManager.last_mpos, sort_by, false);
-                if (unders.length) {
-
-                    // trigger event
-                    sub_chain.do = (f = (sprs, ptr) => sub_chain) => {
-                        f(unders,saved);
-                        return sub_chain;
-                    }
-                } else {
-
-                    // trigger event
-                    sub_chain.else = (f = (ptr) => sub_chain) => {
-                        f(saved);
-                        return sub_chain;
-                    }
-                }
-
-                return sub_chain;
-            }
-            chain.all_reversed = (sort_by = (s) => s.id) => {
-
-                InteractionManager.calc_mouse();
-                var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
-                var unders = InteractionManager.sprites_under_point(items, InteractionManager.last_mpos, sort_by, true);
-                if (unders.length) {
-
-                    // trigger event
-                    sub_chain.do = (f = (sprs, ptr) => sub_chain) => {
-                        f(unders,saved);
-                        return sub_chain;
-                    }
-                } else {
-
-                    // trigger event
-                    sub_chain.else = (f = (ptr) => sub_chain) => {
-                        f(saved);
-                        return sub_chain;
-                    }
-                }
-
-                return sub_chain;
-            }
-        }
-
-        return chain;
+        return InteractionManager._onclick(items, 0);
     }
 
-    // aliases
-    static clicked = InteractionManager.onleftclick;
-    static onclick = InteractionManager.onleftclick;
+    static onmiddleclick(items) {
 
-    static onrightclick() {
+        return InteractionManager._onclick(items, 1);
+    }
 
+    static onrightclick(items) {
+
+        return InteractionManager._onclick(items, 2);
+    }
+
+    static onclick(items) {
+
+        return InteractionManager._onclick(items);
     }
     
     static drag(items) {
@@ -272,11 +173,299 @@ class InteractionManager {
         return chain;
     }
 
-    static onhover() {
+    static onhover(items) {
 
+        // allows for chaining event callbacks
+        var chain;
+        var sub_chain;
+        sub_chain = {
+            enter : (callback) => sub_chain,
+            leave : (callback) => sub_chain,
+            while : (callback) => sub_chain,
+            else : (callback) => sub_chain
+        }
+        chain = {
+            top : (sort_by) => sub_chain,
+            bottom : (sort_by) => sub_chain,
+            all : (sort_by) => sub_chain,
+            all_reversed : (sort_by) => sub_chain
+        }
+
+        // trigger chain
+        chain.top = (sort_by = (s) => s.id, compare_by = (s) => s.id) => {
+            
+            InteractionManager.calc_mouse();
+            var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
+            var under = InteractionManager.sprite_under_point(items, InteractionManager.last_mpos, sort_by, false);
+            if (under) {
+                if (InteractionManager._hover_data.last) {
+                    if (compare_by(InteractionManager._hover_data.last) === compare_by(under)) {
+                        
+                        // case: if i have already been hovering over the detected item
+                    
+                        // trigger event
+                        sub_chain.while = (f = (spr,ptr) => sub_chain) => {
+                            f(under,saved);
+                            return sub_chain;
+                        }
+                    } else {
+
+                        // case: if i have stopped hovering over the previous item but started hovering over the detected item
+
+                        // set flag
+                        var prev = InteractionManager._hover_data.last;
+                        InteractionManager._hover_data.last = under;
+
+                        // trigger events
+                        sub_chain.leave = (f = (spr,ptr) => sub_chain) => {
+                            f(prev,saved);
+                            return sub_chain;
+                        }
+                        sub_chain.enter = (f = (spr,ptr) => sub_chain) => {
+                            f(under,saved);
+                            return sub_chain;
+                        }
+                    }
+                } else {
+
+                    // case: if i have started hovering over the detected item
+
+                    // set flag
+                    InteractionManager._hover_data.last = under;
+                    
+                    // trigger event
+                    sub_chain.enter = (f = (spr,ptr) => sub_chain) => {
+                        f(under,saved);
+                        return sub_chain;
+                    }
+                }
+            } else {
+                if (InteractionManager._hover_data.last) {
+
+                    // case: if i have stopped hovering over the previous item
+
+                    // set flag
+                    var prev = InteractionManager._hover_data.last;
+                    InteractionManager._hover_data.last = null;
+                    
+                    // trigger event
+                    sub_chain.leave = (f = (spr,ptr) => sub_chain) => {
+                        f(prev,saved);
+                        return sub_chain;
+                    }
+                } else {
+
+                    // case: if i am not hovering over anything
+
+                    // trigger event
+                    sub_chain.else = (f = (ptr) => sub_chain) => {
+                        f(saved);
+                        return sub_chain;
+                    }
+                }
+            }
+            return sub_chain;
+        }
+        chain.bottom = (sort_by = (s) => s.id, compare_by = (s) => s.id) => {
+
+            InteractionManager.calc_mouse();
+            var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
+            var under = InteractionManager.sprite_under_point(items, InteractionManager.last_mpos, sort_by, true);
+            if (under) {
+                if (InteractionManager._hover_data.last) {
+                    if (compare_by(InteractionManager._hover_data.last) === compare_by(under)) {
+                        
+                        // case: if i have already been hovering over the detected item
+                    
+                        // trigger event
+                        sub_chain.while = (f = (spr,ptr) => sub_chain) => {
+                            f(under,saved);
+                            return sub_chain;
+                        }
+                    } else {
+
+                        // case: if i have stopped hovering over the previous item but started hovering over the detected item
+
+                        // set flag
+                        var prev = InteractionManager._hover_data.last;
+                        InteractionManager._hover_data.last = under;
+
+                        // trigger events
+                        sub_chain.leave = (f = (spr,ptr) => sub_chain) => {
+                            f(prev,saved);
+                            return sub_chain;
+                        }
+                        sub_chain.enter = (f = (spr,ptr) => sub_chain) => {
+                            f(under,saved);
+                            return sub_chain;
+                        }
+                    }
+                } else {
+
+                    // case: if i have started hovering over the detected item
+
+                    // set flag
+                    InteractionManager._hover_data.last = under;
+                    
+                    // trigger event
+                    sub_chain.enter = (f = (spr,ptr) => sub_chain) => {
+                        f(under,saved);
+                        return sub_chain;
+                    }
+                }
+            } else {
+                if (InteractionManager._hover_data.last) {
+
+                    // case: if i have stopped hovering over the previous item
+
+                    // set flag
+                    var prev = InteractionManager._hover_data.last;
+                    InteractionManager._hover_data.last = null;
+                    
+                    // trigger event
+                    sub_chain.leave = (f = (spr,ptr) => sub_chain) => {
+                        f(prev,saved);
+                        return sub_chain;
+                    }
+                } else {
+
+                    // case: if i am not hovering over anything
+
+                    // trigger event
+                    sub_chain.else = (f = (ptr) => sub_chain) => {
+                        f(saved);
+                        return sub_chain;
+                    }
+                }
+            }
+            return sub_chain;
+        }
+        chain.all = (sort_by = (s) => s.id) => {
+
+            InteractionManager.calc_mouse();
+            var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
+            var unders = InteractionManager.sprites_under_point(items, InteractionManager.last_mpos, sort_by, false);
+            if (unders.length) {
+                if (InteractionManager._hover_data.over_group) {
+                        
+                    // case: if i have already been hovering over the detected item(s)
+                
+                    // trigger event
+                    sub_chain.while = (f = (sprs,ptr) => sub_chain) => {
+                        f(unders,saved);
+                        return sub_chain;
+                    }
+                } else {
+
+                    // case: if i have started hovering over the detected item(s)
+
+                    // set flag
+                    InteractionManager._hover_data.over_group = true;
+                    
+                    // trigger event
+                    sub_chain.enter = (f = (sprs,ptr) => sub_chain) => {
+                        f(unders,saved);
+                        return sub_chain;
+                    }
+                }
+            } else {
+                if (InteractionManager._hover_data.over_group) {
+
+                    // case: if i have stopped hovering over the previous item(s)
+
+                    // set flag
+                    InteractionManager._hover_data.over_group = false;
+                    
+                    // trigger event
+                    sub_chain.leave = (f = (sprs,ptr) => sub_chain) => {
+                        f(unders,saved);
+                        return sub_chain;
+                    }
+                } else {
+
+                    // case: if i am not hovering over anything
+
+                    // trigger event
+                    sub_chain.else = (f = (ptr) => sub_chain) => {
+                        f(saved);
+                        return sub_chain;
+                    }
+                }
+            }
+            return sub_chain;
+        }
+        chain.all_reversed = (sort_by = (s) => s.id) => {
+
+            InteractionManager.calc_mouse();
+            var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
+            var unders = InteractionManager.sprites_under_point(items, InteractionManager.last_mpos, sort_by, true);
+            if (unders.length) {
+                if (InteractionManager._hover_data.over_group) {
+                        
+                    // case: if i have already been hovering over the detected item(s)
+                
+                    // trigger event
+                    sub_chain.while = (f = (sprs,ptr) => sub_chain) => {
+                        f(unders,saved);
+                        return sub_chain;
+                    }
+                } else {
+
+                    // case: if i have started hovering over the detected item(s)
+
+                    // set flag
+                    InteractionManager._hover_data.over_group = true;
+                    
+                    // trigger event
+                    sub_chain.enter = (f = (sprs,ptr) => sub_chain) => {
+                        f(unders,saved);
+                        return sub_chain;
+                    }
+                }
+            } else {
+                if (InteractionManager._hover_data.over_group) {
+
+                    // case: if i have stopped hovering over the previous item(s)
+
+                    // set flag
+                    InteractionManager._hover_data.over_group = false;
+                    
+                    // trigger event
+                    sub_chain.leave = (f = (sprs,ptr) => sub_chain) => {
+                        f(unders,saved);
+                        return sub_chain;
+                    }
+                } else {
+
+                    // case: if i am not hovering over anything
+
+                    // trigger event
+                    sub_chain.else = (f = (ptr) => sub_chain) => {
+                        f(saved);
+                        return sub_chain;
+                    }
+                }
+            }
+            return sub_chain;
+        }
+        return chain;
     }
 
+    // aliases
+    static clicked = InteractionManager.onclick;
+    static leftclicked = InteractionManager.onleftclick;
+    static rightclicked = InteractionManager.onrightclick;
+    static onwheelclick = InteractionManager.onmiddleclick;
+    static wheelclicked = InteractionManager.onmiddleclick;
+    static middleclicked = InteractionManager.onmiddleclick;
+    static hover = InteractionManager.onhover;
+
     /// Other helpful methods
+
+    static update() {
+
+        // todo -> encapsulate optimization of mpos calculations (only calc once per update)
+    }
 
     /**
      *  Note: Call at the end of game loop and collect Grid's
@@ -291,19 +480,18 @@ class InteractionManager {
     /**
      *  @todo also handle drag resetting so you can have different drags
      *  Note: Call at the end of game loop and collect Grid's
-     *        mouse position from here for efficiency.
+     *        mouse position near this function call for efficiency.
      */
     static reset_pressed() {
 
-        if (Game.mouse_upped === 0) {
-            InteractionManager._lmb_click_data.pressed = false;
-            InteractionManager._rmb_click_data.pressed = false;
-        } else {
-            if (Game.mouse_curr === 0 && !InteractionManager._lmb_click_data.pressed)
-                InteractionManager._lmb_click_data.pressed = true;
-            if (Game.mouse_curr === 0 && !InteractionManager._rmb_click_data.pressed)
-                InteractionManager._rmb_click_data.pressed = true;
-        }
+        // stop pressing the currently unpressed mb
+        InteractionManager._mb_press(Game.mouse_upped, false);
+
+        // check for any first-time left, middle, or right click
+        if (InteractionManager._mb_first_click(-1))
+
+            // start pressing
+            InteractionManager._mb_press(Game.mouse_curr, true);
     }
 
     /**
@@ -374,5 +562,185 @@ class InteractionManager {
     static mouse() {
 
         return InteractionManager.last_mpos;
+    }
+
+    // private helpers
+
+    /**
+     * mb = mouse button:
+     * -1 : any
+     *  0 : left
+     *  1 : middle
+     *  2 : right
+     * 
+     * @param {Sprites} sprites 
+     * @param {Number} mb 
+     */
+    static _onclick(sprites, mb=-1) {
+
+        // allows for chaining event callbacks
+        var chain;
+        var sub_chain;
+        sub_chain = {
+            do : (callback) => sub_chain,
+            else : (callback) => sub_chain
+        }
+        chain = {
+            top : (sort_by) => sub_chain,
+            bottom : (sort_by) => sub_chain,
+            all : (sort_by) => sub_chain,
+            all_reversed : (sort_by) => sub_chain
+        }
+
+        // check for an unpressed mb
+        if (InteractionManager._mb_upped(mb)) {
+
+            // stop pressing
+            if (!InteractionManager.deferred_resets)
+                InteractionManager._mb_press(Game.mouse_upped, false);
+
+        // check for a first time mb click
+        } else if (InteractionManager._mb_first_click(mb)) {
+
+            // start pressing
+            if (!InteractionManager.deferred_resets)
+                InteractionManager._mb_press(Game.mouse_curr, true);
+
+            // trigger chain
+            chain.top = (sort_by = (s) => s.id) => {
+
+                InteractionManager.calc_mouse();
+                var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
+                var under = InteractionManager.sprite_under_point(sprites, InteractionManager.last_mpos, sort_by, false);
+                if (under) {
+
+                    // trigger event
+                    sub_chain.do = (f = (spr, ptr) => sub_chain) => {
+                        f(under,saved);
+                        return sub_chain;
+                    }
+                } else {
+
+                    // trigger event
+                    sub_chain.else = (f = (ptr) => sub_chain) => {
+                        f(saved);
+                        return sub_chain;
+                    }
+                }
+                return sub_chain;
+            }
+            chain.bottom = (sort_by = (s) => s.id) => {
+
+                InteractionManager.calc_mouse();
+                var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
+                var under = InteractionManager.sprite_under_point(sprites, InteractionManager.last_mpos, sort_by, true);
+                if (under) {
+
+                    // trigger event
+                    sub_chain.do = (f = (spr, ptr) => sub_chain) => {
+                        f(under,saved);
+                        return sub_chain;
+                    }
+                } else {
+
+                    // trigger event
+                    sub_chain.else = (f = (ptr) => sub_chain) => {
+                        f(saved);
+                        return sub_chain;
+                    }
+                }
+                return sub_chain;
+            }
+            chain.all = (sort_by = (s) => s.id) => {
+
+                InteractionManager.calc_mouse();
+                var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
+                var unders = InteractionManager.sprites_under_point(sprites, InteractionManager.last_mpos, sort_by, false);
+                if (unders.length) {
+
+                    // trigger event
+                    sub_chain.do = (f = (sprs, ptr) => sub_chain) => {
+                        f(unders,saved);
+                        return sub_chain;
+                    }
+                } else {
+
+                    // trigger event
+                    sub_chain.else = (f = (ptr) => sub_chain) => {
+                        f(saved);
+                        return sub_chain;
+                    }
+                }
+                return sub_chain;
+            }
+            chain.all_reversed = (sort_by = (s) => s.id) => {
+
+                InteractionManager.calc_mouse();
+                var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
+                var unders = InteractionManager.sprites_under_point(sprites, InteractionManager.last_mpos, sort_by, true);
+                if (unders.length) {
+
+                    // trigger event
+                    sub_chain.do = (f = (sprs, ptr) => sub_chain) => {
+                        f(unders,saved);
+                        return sub_chain;
+                    }
+                } else {
+
+                    // trigger event
+                    sub_chain.else = (f = (ptr) => sub_chain) => {
+                        f(saved);
+                        return sub_chain;
+                    }
+                }
+                return sub_chain;
+            }
+        }
+        return chain;
+    }
+
+    static _mb_upped(mb=-1) {
+        if (mb === -1) return Game.mouse_upped === 0 || Game.mouse_upped === 1 || Game.mouse_upped === 2
+        else return Game.mouse_upped === mb;
+    }
+
+    static _mb_first_click(mb=-1) {
+        if (mb === -1) {
+            return (Game.mouse_curr === 0 && !InteractionManager._lmb_click_data.pressed) ||
+            (Game.mouse_curr === 1 && !InteractionManager._mmb_click_data.pressed) ||
+            (Game.mouse_curr === 2 && !InteractionManager._rmb_click_data.pressed);
+        } else
+            return Game.mouse_curr === mb &&
+                (mb === 0 ? !InteractionManager._lmb_click_data.pressed :
+                    mb === 1 ? !InteractionManager._mmb_click_data.pressed :
+                        mb === 2 ? !InteractionManager._rmb_click_data.pressed : null);
+    }
+
+    static _mb_press(mb=-1, start=true) {
+        if (start) {
+            if (mb === -1) {
+                InteractionManager._lmb_click_data.pressed = true;
+                InteractionManager._mmb_click_data.pressed = true;
+                InteractionManager._rmb_click_data.pressed = true;
+            } else if (mb === 0) {
+                InteractionManager._lmb_click_data.pressed = true;
+            } else if (mb === 1) {
+                InteractionManager._mmb_click_data.pressed = true;
+            } else if (mb === 2) {
+                InteractionManager._rmb_click_data.pressed = true;
+            }
+        } else {
+            if (mb === -1) {
+                InteractionManager._lmb_click_data.pressed = false;
+                InteractionManager._mmb_click_data.pressed = false;
+                InteractionManager._rmb_click_data.pressed = false;
+            } else if (mb === 0) {
+                InteractionManager._lmb_click_data.pressed = false;
+            } else if (mb === 1) {
+                InteractionManager._mmb_click_data.pressed = false;
+            } else if (mb === 2) {
+                InteractionManager._rmb_click_data.pressed = false;
+            }
+        }
     }
 }//end class

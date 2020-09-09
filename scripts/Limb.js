@@ -736,6 +736,28 @@ class Limb {
     }
 
     /**
+     * Deletes and destroys self.
+     * 
+     * @param {Boolean} should the underlying sprite be marked as dead? Otherwise will be destroyed
+     */
+    destroy(mark_sprite_as_dead=true) {
+
+        // destroy or mark sprite dead
+        if (this.sprite) {
+            if (mark_sprite_as_dead)
+                this.sprite.mark_dead();
+            else {
+                this.sprite.destroy();
+                this.sprite = null;
+            }
+        }
+
+        // delete and disable self and return
+        this._limb_node.delete();
+        this.disable();
+    }
+
+    /**
      * Returns this limb's and all its child limbs by group
      * in an object of the format:
      *      groups = {

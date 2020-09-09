@@ -5807,12 +5807,21 @@ function Sprite(scene, image_data, has_bbox=true,
     }
 
     this.destroy = function() {
-        //--    Marks current instance for deletion
+        //--    Marks current instance for deletion AND nullifies sub-objects.
         //--
 
         this.dead = true;
         this.visibility = false;
         if (this.bbox) this.bbox = null;
+        if (this.hull) this.hull = null;
+    }
+
+    this.mark_dead = function() {
+        //--    Marks current instance for deletion ONLY.
+        //--
+
+        this.dead = true;
+        this.visibility = false;
     }
 
     this.hide = function() {
@@ -5941,6 +5950,7 @@ function Sprite(scene, image_data, has_bbox=true,
             return this.width * this.scale_x * this.scale_global;
         }
     }
+    this.get_width = this.get_w; // alias
 
     this.get_h = function() {
         //--    Returns width of sprite
@@ -5952,6 +5962,7 @@ function Sprite(scene, image_data, has_bbox=true,
             return this.height * this.scale_y * this.scale_global;
         }
     }
+    this.get_height = this.get_h; // alias
 
     this.get_w_orig = function() {
         //--    Returns width of sprite

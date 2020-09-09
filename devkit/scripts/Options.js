@@ -41,7 +41,8 @@ var AB_UI_OPTS = {
     weight : 'bold',
     color_primary : '#676767',
     color_secondary : '#343434',
-    color_tertiary : 'red'
+    color_tertiary : 'red',
+    outline_thickness : 2
 }
 
 // all of these are used in GRID_OPTS
@@ -61,7 +62,7 @@ grid_scroll = {
 grid_rot = null;
 grid_zoom = {
     origin   : 'mouse',
-    bounds   : {'in': 2, 'out': 0.85},
+    bounds   : {'in': 10, 'out': 0.85},
     speed    : 4,
     controls : true /* scroll wheel default control */
 }
