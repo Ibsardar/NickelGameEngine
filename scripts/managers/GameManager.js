@@ -166,6 +166,12 @@ class GameManager {
      */
     static garbage_collection() {
 
+        // 
+        // REMEMBER!!!   GAMEMANAGER WILL HANDLE GC CONDITIONS, AND GARBAGECOLLECTOR WILL HANDLE ACTUAL GC OPS !!!
+        //     
+
+        // TODO
+
         if (Projectile.count > Projectile.group_count * GameManager.max_projectiles_per_group_until_gc) {
             if (Nickel.DEBUG) console.log('Projectile garbage collection triggered.');
             SmartBullet.delete_destroyed(GameManager.trigger_delete_events_flag);

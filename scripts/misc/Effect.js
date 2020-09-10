@@ -32,7 +32,7 @@ class Effect {
         
         this.name = name;
         this.target = target;
-        this.script = script;
+        this.script = script; // callback function
         this.started_at = Date.now();
     }
 

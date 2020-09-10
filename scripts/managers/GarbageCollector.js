@@ -23,6 +23,7 @@ import { Actor } from "../Actor.js";
 import { Projectile } from "../projectiles/Projectile.js";
 import { ParticleBulletSystem } from "../projectiles/ParticleBulletSystem.js";
 import { Hazard } from "../misc/Hazard.js";
+import { GameManager } from "./GameManager.js";
 
 export { GarbageCollector, GarbageCollector as Garbage }; // also export an alias
 
@@ -39,7 +40,7 @@ class GarbageCollector {
     static scene;
 
     /**
-     * Sets the scene and grid if any.
+     * Sets the scene.
      * Sets flags to default values.
      * 
      * @param {Viewport} scene Main game
@@ -92,20 +93,94 @@ class GarbageCollector {
         }
     }
 
-    // 
-    // REMEMBER!!!   GAMEMANAGER WILL HANDLE GC CONDITIONS, AND GARBAGECOLLECTOR WILL HANDLE ACTUAL GC OPS !!!
-    //     
+    static _gc_actor(trigger_delete_events=false, ...lists) {
 
-    static _gc_actor() {/**@todo */}
+        // remove from each list
+        for (let list of lists)
+            list = list.filter(
+                item => item && (
+                    (item instanceof Actor && !item._state != Actor.DESTROYED) || !(item instanceof Actor)
+                )
+            );
 
-    static _gc_projectile() {/**@todo */}
+        Actor.delete_destroyed(trigger_delete_events);
+    }
 
-    static _gc_pbs() {/**@todo */}
+    static _gc_projectile(trigger_delete_events=false, ...lists) {
 
-    static _gc_hazard() {/**@todo */}
+        // remove from each list
+        for (let list of lists)
+            list = list.filter(
+                item => item && (
+                    (item instanceof Projectile && !item._state != Projectile.DESTROYED) || !(item instanceof Projectile)
+                )
+            );
 
-    static _gc_locomotive() {/**@todo */}
+        Projectile.delete_destroyed(trigger_delete_events);
+    }
 
-    static _gc_sprite() {/**@todo */}
+    static _gc_pbs(trigger_delete_events=false, ...lists) {
 
+        // remove from each list
+        for (let list of lists)
+            list = list.filter(
+                item => item && (
+                    (item instanceof ParticleBulletSystem && !item._state != ParticleBulletSystem.DESTROYED) ||
+                    !(item instanceof ParticleBulletSystem)
+                )
+            );
+
+        ParticleBulletSystem.delete_destroyed(trigger_delete_events);
+    }
+
+    static _gc_hazard(...lists) {
+
+        // remove from each list
+        for (let list of lists)
+            list = list.filter(
+                item => item && (
+                    (item instanceof Hazard && !item._state != Projectile.DESTROYED) || !(item instanceof Hazard)
+                )
+            );
+
+        Hazard.delete_destroyed();
+    }
+
+    static _gc_locomotive(...lists) {
+        
+        // remove from world
+        if (GameManager.world)
+            GameManager.world.load = GameManager.world.load.filter(
+                item => item && (
+                    (item instanceof Locomotive && !item.dead) || !(item instanceof Locomotive)
+                )
+            );
+
+        // remove from each list
+        for (let list of lists)
+            list = list.filter(
+                item => item && (
+                    (item instanceof Locomotive && !item.dead) || !(item instanceof Locomotive)
+                )
+            );
+    }
+
+    static _gc_sprite(...lists) {
+
+        // remove from world
+        if (GameManager.world)
+            GameManager.world.load = GameManager.world.load.filter(
+                item => item && (
+                    (item instanceof Sprite && !item.dead) || !(item instanceof Sprite)
+                )
+            );
+
+        // remove from each list
+        for (let list of lists)
+            list = list.filter(
+                item => item && (
+                    (item instanceof Sprite && !item.dead) || !(item instanceof Sprite)
+                )
+            );
+    }
 }//end class
