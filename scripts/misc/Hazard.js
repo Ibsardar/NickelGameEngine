@@ -41,9 +41,19 @@ class Hazard extends Bullet {
     }
 
     /**
+     * Static function: Triggers events based on current state of hazards.
+     * Must be called at regular intervals (ex: 60 times per second i.e. 60fps).
+     */
+    static handle_triggers() {
+
+        // handle Hazard-specific triggers
+        // ...
+    }
+
+    /**
      * Static function: removes all targets, projectiles, and their
      * quadtree for a certian group. Does not trigger delete event by
-     * default. Does not internally destroy projectiles by default.
+     * default. Does not internally destroy projectiles by default. (i.e. internals may still exist if referenced)
      * * note: will delete non-Hazard projectiles in the given group
      * 
      * @param {String} group group id of targets
@@ -95,10 +105,11 @@ class Hazard extends Bullet {
     /**
      * @overrides parent class function.
      * Resets all static data to the default values.
+     * If deep is false, then do not reset parent class.
      */
-    static reset() {
+    static reset(deep=true) {
 
-        Bullet.reset();
+        if (deep) Bullet.reset();
         Hazard._p_hazards = {};
     }
 

@@ -30,6 +30,9 @@ import { Fire } from '../../scripts/projectiles/Fire.js';
 import { View } from '../../scripts/View.js';
 import { actor_builder } from './actor_builder.js';
 import { UIBuilder } from '../../scripts/builders/UIBuilder.js';
+import { Projectile } from '../../scripts/projectiles/Projectile.js';
+import { ParticleBulletSystem } from '../../scripts/projectiles/ParticleBulletSystem.js';
+import { Actor } from '../../scripts/Actor.js';
 
 export { menu }
 
@@ -41,7 +44,7 @@ var oob_fire; //<---- not working correctly
 menu.game_init = () => {
 
     // setup
-    Nickel.DEBUG = false;
+    Nickel.DEBUG = true;
     Game.set_bg_color("#adadad");
     Game.set_fps(40);
     GameManager.reset();
@@ -91,6 +94,28 @@ menu.game_init = () => {
 
     // for testing...
     Nickel.GLOBALS.gm = GameManager;
+    Nickel.GLOBALS.counts = (clear=true) => {
+        if (clear) console.clear();
+        console.log("\
+        Projectile:\n\
+            groups:             " + Projectile.number_of_groups + "\n\
+            count:              " + Projectile.count + "\n\
+            dead:               " + Projectile.dead_count + "\n\
+        ParticleBulletSystem:\n\
+            groups:             " + ParticleBulletSystem.number_of_groups + "\n\
+            count (systems):    " + ParticleBulletSystem.count + "\n\
+            count (particles):  " + ParticleBulletSystem.particle_count + "\n\
+            dead (systems):     " + ParticleBulletSystem.dead_count + "\n\
+        Actor:\n\
+            groups:             " + Actor.number_of_groups + "\n\
+            count:              " + Actor.count + "\n\
+            dead:               " + Actor.dead_count + "\n\
+        World:\n\
+            count:              " + GameManager.world.load.length + "\n\
+        GC:\n\
+            time left:          " + Math.round(GameManager._gc_timer.remaining() / 1000) + "s\n\
+        ");
+    }
 }
 
 // Game Loop:

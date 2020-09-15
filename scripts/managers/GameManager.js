@@ -28,6 +28,8 @@ import { GlowPBS } from "../projectiles/GlowPBS.js";
 import { Fire } from "../projectiles/Fire.js";
 import { Actor } from "../Actor.js";
 import { Game } from "../game.js";
+import { Hazard } from "../misc/Hazard.js";
+import { GarbageCollector } from "./GarbageCollector.js";
 
 export { GameManager, GameManager as GaMa }; // also export an alias
 
@@ -41,25 +43,52 @@ export { GameManager, GameManager as GaMa }; // also export an alias
  */
 class GameManager {
 
-    // Viewport of the game
+    /** Viewport of the game */
     static scene;
 
     // Grid (if any) that the manager updates everything in
     static _world;
 
-    // max # of projectiles per group until garbage
-    // collection deletes all dead projectiles
+    /** max # of projectiles per group until garbage
+     * collection deletes all dead projectiles
+     */
     static max_projectiles_per_group_until_gc;
 
-    // max # of particles per group until garbage
-    // collection deletes all dead particles
+    /** max # of particles per group until garbage
+     * collection deletes all dead particles
+     */
     static max_particles_per_group_until_gc;
 
-    // if true, triggers delete events
+    /** max # of actors per group until garbage
+     * collection deletes all dead actors
+     */
+    static max_actors_per_group_until_gc;
+
+    /** max # of world objects per group until garbage
+     *  collection deletes all types of dead objects
+     */
+    static max_world_objects_until_gc;
+
+    /** if true, triggers delete events */
     static trigger_delete_events_flag;
 
-    // list of groups to be updated
-    static active_group_name_list = [];
+    /** list of groups to be updated */
+    static active_group_name_list = []; // NOT USED
+
+    /** Determines max wait time (ms) for gc to wait for any gc operation until it is triggered */
+    static max_gc_wait_time;
+
+    /** Condition function which triggers a custom garbage collection */
+    static custom_gc_collect_condition = () => {};
+
+    /** Filter function which determines when an item in a custom_gc_list is not garbage */
+    static custom_gc_garbage_filter = (item) => {};
+
+    /** List of references to lists for custom garbage collection */
+    static custom_gc_lists = [];
+
+    /** If enabled, regularly calls custom garbage collection (regardless of collect condition function) */
+    static continuous_custom_gc_enabled = false;
 
     // list of groups to update if update type is WHITELIST
     // list of groups to not update if update type is BLACKLIST
@@ -69,6 +98,9 @@ class GameManager {
     // how is updating restricted? WHITELIST, BLACKLIST, or UNRESTRICTED?
     // (see GameManager constants)
     static _update_type = 0; // default UNRESTRICTED
+
+    // Garbage collection timer
+    static _gc_timer;
 
     /**
      * Sets the scene.
@@ -80,10 +112,27 @@ class GameManager {
 
         GameManager.scene = scene;
         Skeleton._scene = scene;
+        GarbageCollector.init(scene);
+        GameManager._gc_timer = new SimpleTimer();
 
         GameManager.max_projectiles_per_group_until_gc = Nickel.DEBUG ? 10 : 100;
-        GameManager.max_particles_per_group_until_gc = Nickel.DEBUG ? 50 : 1000;
+        GameManager.max_particles_per_group_until_gc = Nickel.DEBUG ? 100 : 1000;
+        GameManager.max_actors_per_group_until_gc = Nickel.DEBUG ? 5 : 50;
+        GameManager.max_world_objects_until_gc = Nickel.DEBUG ? 25 : 250;
         GameManager.trigger_delete_events_flag = Nickel.DEBUG ? true : false;
+        GameManager.max_gc_wait_time = Nickel.DEBUG ? 60000 : 300000; // 60s or 5min
+
+        GameManager._gc_timer.set_alarm(GameManager.max_gc_wait_time);
+        GameManager._gc_timer.on_alarm(() => {
+            if (Nickel.DEBUG) console.log("GC timer is up, collecting all garbage. GC timer restarted.");
+            GarbageCollector.collect(null, GameManager.trigger_delete_events_flag); // collect all
+            if (GameManager.continuous_custom_gc_enabled) {
+                if (Nickel.DEBUG) console.log("Also collecting all custom garbage.");
+                GarbageCollector.custom(GameManager.custom_gc_garbage_filter, GameManager.custom_gc_lists); // collect custom
+            }
+            GameManager._gc_timer.restart();
+        });
+        GameManager._gc_timer.start();
     }
 
     /**
@@ -93,23 +142,32 @@ class GameManager {
      */
     static handle() {
 
-        // update world instead if set
-        if (GameManager._world)
+        // clean up (independent of all canvases)
+        GameManager.garbage_collection();
+
+        // update world if set
+        if (GameManager._world) {
         
-            // grid
+            // grid canvas
             GameManager._world.update();
 
         // if no world available, update into the raw canvas
-        else
-
+        } else {
+            
+            // main canvas
             GameManager._handle();
+        }
     }
 
     /**
      * Runs handles for every base class that has handles.
-     * Runs garbage collection.
+     * Updates some static managed classes.
+     * Does NOT run garbage collection.
      */
     static _handle() {
+
+        // hazards
+        Hazard.handle_triggers();
 
         // actors
         Actor.handle_triggers();
@@ -124,9 +182,6 @@ class GameManager {
         ParticleBulletSystem.handle_triggers();
         GlowPBS.handle_triggers();
         Fire.handle_triggers();
-
-        // clean up
-        GameManager.garbage_collection();
 
         // update
         GameManager.update();
@@ -161,26 +216,42 @@ class GameManager {
     }
 
     /**
-     * @todo implement an efficient dead_count getter (just record additions and subtractions of object so you don't have to re-count every frame)
-     * Collects garbage i.e. remove dead things.
+     * Collects garbage i.e. removes dead things.
      */
     static garbage_collection() {
 
-        // 
-        // REMEMBER!!!   GAMEMANAGER WILL HANDLE GC CONDITIONS, AND GARBAGECOLLECTOR WILL HANDLE ACTUAL GC OPS !!!
-        //     
+        if (Projectile.count > Projectile.number_of_groups * GameManager.max_projectiles_per_group_until_gc) {
+            if (Nickel.DEBUG) console.log('Projectile garbage collection triggered. GC timer restarted.');
+            GarbageCollector.collect(Projectile, GameManager.trigger_delete_events_flag);
+            GarbageCollector.collect(Hazard);
+            GameManager._gc_timer.restart();
+        }  
 
-        // TODO
+        if (ParticleBulletSystem.particle_count > ParticleBulletSystem.number_of_groups * GameManager.max_particles_per_group_until_gc) {
+            if (Nickel.DEBUG) console.log('ParticleBulletSystem garbage collection triggered. GC timer restarted.');
+            GarbageCollector.collect(ParticleBulletSystem, GameManager.trigger_delete_events_flag);
+            GameManager._gc_timer.restart();
+        }   
 
-        if (Projectile.count > Projectile.group_count * GameManager.max_projectiles_per_group_until_gc) {
-            if (Nickel.DEBUG) console.log('Projectile garbage collection triggered.');
-            SmartBullet.delete_destroyed(GameManager.trigger_delete_events_flag);
+        if (Actor.count > Actor.number_of_groups * GameManager.max_actors_per_group_until_gc) {
+            if (Nickel.DEBUG) console.log('Actor garbage collection triggered. GC timer restarted.');
+            GarbageCollector.collect(Actor, GameManager.trigger_delete_events_flag);
+            GameManager._gc_timer.restart();
         }
 
-        if (ParticleBulletSystem.particle_count > ParticleBulletSystem.group_count * GameManager.max_particles_per_group_until_gc) {
-            if (Nickel.DEBUG) console.log('ParticleBulletSystem garbage collection triggered.');
-            ParticleBulletSystem.delete_destroyed(GameManager.trigger_delete_events_flag);
+        if (GameManager._world.load.length > GameManager.max_world_objects_until_gc) {
+            if (Nickel.DEBUG) console.log('World garbage collection triggered. GC timer restarted.');
+            GarbageCollector.collect(null, GameManager.trigger_delete_events_flag); // collect all
+            GameManager._gc_timer.restart();
         }
+
+        if (GameManager.custom_gc_collect_condition()) {
+            if (Nickel.DEBUG) console.log('Custom garbage collection triggered. GC timer restarted.');
+            GarbageCollector.custom(GameManager.custom_gc_garbage_filter, GameManager.custom_gc_lists); // collect custom
+            GameManager._gc_timer.restart();
+        }
+
+        GameManager._gc_timer.update();
     }
 
     /**
@@ -191,7 +262,8 @@ class GameManager {
 
         GameManager._world = null;
         Fire.reset();
-        SmartBullet.reset();
+        SmartBullet.reset(); // deep reset
+        Hazard.reset(false); // shallow reset
         Actor.reset();
         Skeleton.reset();
     }
@@ -205,10 +277,73 @@ class GameManager {
         GameManager._world = null;
         GameManager.max_projectiles_per_group_until_gc = null;
         GameManager.max_particles_per_group_until_gc = null;
+        GameManager.max_actors_per_group_until_gc = null;
+        GameManager.max_world_objects_until_gc = null;
         GameManager.trigger_delete_events_flag = null;
         GameManager.active_group_name_list = [];
         GameManager._groups = [];
         GameManager._update_type = 0;
+        GameManager.max_gc_wait_time = null;
+        GameManager._gc_timer = null;
+        GameManager.custom_gc_collect_condition = () => {};
+        GameManager.custom_gc_garbage_filter = (item) => {};
+        GameManager.custom_gc_lists = [];
+        GameManager.continuous_custom_gc_enabled = false;
+    }
+
+    /**
+     * Sets the collect condition function that determines custom
+     * gc calls. Sets the garbage filter function. Sets the
+     * custom list of lists to collect custom garbage from.
+     * 
+     * ***Note: ONLY 1 CUSTOM GC CONFIGURATION IS AVAILABLE
+     *          SO PUT ALL YOUR CUSTOM STUFF IN ONE FUNCTION!***
+     * 
+     * *Sub-Note: If continuous_custom_gc_enabled is true, these
+     *            paramters will also be called along with the
+     *            default frequency-based gc calls. To disable,
+     *            simply set continuous_custom_gc_enabled to false.*
+     * 
+     * @param {GameManager.custom_gc_collect_condition} collect 
+     * @param {GameManager.custom_gc_garbage_filter} filter 
+     * @param  {...any} lists 
+     */
+    static set_conditional_custom_gc(collect=GameManager.custom_gc_collect_condition,
+        filter=GameManager.custom_gc_garbage_filter,...lists) {
+        
+        GameManager.custom_gc_collect_condition = collect;
+        GameManager.custom_gc_garbage_filter = filter;
+        GameManager.custom_gc_lists = lists;
+    }
+
+    /**
+     * Sets the garbage filter function. Sets the custom
+     * list of lists to collect custom garbage from. Enables
+     * frequency based gc (i.e. custom gc will also be called
+     * along with default gc, based on gc call frequency)
+     * 
+     * ***Note: ONLY 1 CUSTOM GC CONFIGURATION IS AVAILABLE
+     *          SO PUT ALL YOUR CUSTOM STUFF IN ONE FUNCTION!***
+     * 
+     * @param {GameManager.custom_gc_garbage_filter} filter 
+     * @param  {...any} lists 
+     */
+    static set_timed_custom_gc(filter=GameManager.custom_gc_garbage_filter, ...lists) {
+
+        GameManager.continuous_custom_gc_enabled = true;
+        GameManager.custom_gc_garbage_filter = filter;
+        GameManager.custom_gc_lists = lists;
+    }
+
+    /**
+     * Reset all custom garbage collection configuration.
+     */
+    static reset_custom_gc() {
+
+        GameManager.custom_gc_collect_condition = () => {};
+        GameManager.custom_gc_garbage_filter = (item) => {};
+        GameManager.custom_gc_lists = [];
+        GameManager.continuous_custom_gc_enabled = false;
     }
 
     /**

@@ -2171,6 +2171,7 @@ function SimpleTimer() {
     // general
     this.id = Nickel.UTILITY.assign_id();
     this.type = 'SimpleTimer';
+    this.fs = [];
 
     // times
     this.birth = 0;
@@ -2189,8 +2190,11 @@ function SimpleTimer() {
 
         if (!this.stopped && this.started && !this.paused) {
             this.passed = Date.now() - this.birth;
-            if (this.passed >= this.max)
+            if (this.passed >= this.max) {
                 this.stopped = true;
+                for (let f of this.fs)
+                    f();
+            }
         }
     }
 
@@ -2220,6 +2224,18 @@ function SimpleTimer() {
         this.limit = this.birth + this.max;
     }
 
+    this.restart = function() {
+        //-- Resets the timer's state and begins the timer.
+        //--
+
+        this.stopped = false;
+        this.paused = false;
+        this.started = true;
+        this.birth = Date.now();
+        this.passed = 0;
+        this.limit = this.birth + this.max;
+    }
+
     this.pause = function() {
         //-- Pauses the timer.
         //--
@@ -2242,6 +2258,20 @@ function SimpleTimer() {
         return this.max - this.passed;
     }
 
+    this.on_alarm = function(callback = () => {}) {
+        //-- Adds a reaction function. (triggered when timer stops)
+        //-- 
+
+        this.fs.push(callback);
+    }
+    this.on_stop = this.on_alarm; // alias
+
+    this.clear_reactions = function() {
+        //-- Removes all reactions to alarm.
+        //--
+
+        this.fs = [];
+    }
 }//end SimpleTimer
 
 
@@ -6386,6 +6416,7 @@ function Sprite(scene, image_data, has_bbox=true,
 
         return this.dead;
     }
+    this.is_dead = this.is_destroyed; // alias
 
     this.get_layer = function() {
         //--    Returns sprite's collision layer

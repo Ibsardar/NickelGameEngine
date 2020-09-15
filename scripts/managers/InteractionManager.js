@@ -40,6 +40,9 @@ class InteractionManager {
     // Note: use defer_resets and auto_resets instead, those are more verbose
     static deferred_resets = false;
 
+    // Ignore dead sprites.
+    static dead_checks = false;
+
     // Note: use carefully externally. May not be accurate unless resetted at the end of each game loop.
     static last_mpos;
 
@@ -495,30 +498,35 @@ class InteractionManager {
     }
 
     /**
+     * Dead sprites not included in selections.
+     */
+    static skip_dead = () => InteractionManager.dead_checks = true;
+
+    /**
+     * Dead sprites are included in selection (this is the default behaviour)
+     */
+    static dont_skip_dead = () => InteractionManager.dead_checks = false;
+
+    /**
      * Must use InteractionManager.reset_pressed along with
      * this to allow multiple key presses before resetting
      * towards the bottom of your game loop.
      */
-    static defer_resets() {
-
-        InteractionManager.deferred_resets = true;
-    }
+    static defer_resets = () => InteractionManager.deferred_resets = true;
 
     /**
      * Will cause there to be only one key pressed per
      * action type but no manual resetting is required.
      * This is the default.
      */
-    static auto_resets() {
-
-        InteractionManager.deferred_resets = false;
-    }
+    static auto_resets = () => InteractionManager.deferred_resets = false;
 
     static sprites_under_point(items=[], pt=[0,0], sort_by = (s) => s.id, reversed=false, only_first=false) {
 
         var heap = new Heap(reversed ? 'min' : 'max');
         for (let item of items) {
             var spr = InteractionManager.sprite_of(item);
+            if (InteractionManager.dead_checks && spr.is_dead()) continue; // ignore dead sprites
             if (spr.colliding_with(pt, false))
                 heap.in(spr,sort_by(spr));
         }

@@ -103,6 +103,15 @@ class Actor {
         if (adata.on_delete) this.on('delete', adata.on_delete);
         if (adata.on_action_complete) this.on('action-complete', adata.on_action_complete);
 
+        // increment counts
+        Actor._count++
+        if (Actor._counts[adata.group]) {
+            Actor._counts[adata.group]++;
+        } else {
+            Actor._counts[adata.group] = 1;
+            Actor._dead_counts[adata.group] = 0;
+        }
+
         // trigger create event
         this._state = Actor.INITIALIZED;
         Actor._create_trigger_queue.in(() => {
@@ -141,6 +150,10 @@ class Actor {
      */
     static delete_group(group, trigger=false) {
 
+        // decrement counts
+        Actor._count -= Actor._counts[group];
+        Actor._dead_count -= Actor._dead_counts[group];
+
         // trigger delete event for each removed actor
         if (trigger) {
             var gp = Actor._actors[group];
@@ -153,23 +166,20 @@ class Actor {
         delete Actor._targets[group];
         delete Actor._actors[group];
         delete Actor._quadtrees[group];
+        delete Actor._counts[g];
+        delete Actor._dead_counts[g];
     }
 
     /**
-     * Static function: removes all destroyed actors. Also
-     * removes empty groups. Does not trigger delete event by
+     * Static function: removes all destroyed actors. Doesn't
+     * remove empty groups. Does not trigger delete event by
      * default.
      * 
      * @param {Boolean} [trigger=false] trigger delete events
      */
     static delete_destroyed(trigger=false) {
 
-        ls = Actor._actors;
-
-        // remove empty groups
-        for (var i in ls) 
-            if (!ls[i] || !ls[i].length)
-                delete ls[i];
+        var ls = Actor._actors;
 
         // remove dead actors
         for (var g in ls) {
@@ -179,6 +189,8 @@ class Actor {
                 ls[g] = ls[g].filter(actor => {
                     if (!actor) return false;
                     if (actor._state == Actor.DESTROYED) {
+                        Actor._dead_count--;
+                        Actor._dead_counts[g]--;
                         actor.trigger('delete', actor);
                         return false;
                     } else
@@ -187,9 +199,15 @@ class Actor {
 
             // filter out dead actors only
             } else {
-                ls[g] = ls[g].filter(actor =>
-                    actor && actor._state != Actor.DESTROYED
-                );
+                ls[g] = ls[g].filter(actor => {
+                    if (!actor) return false;
+                    if (actor._state == Actor.DESTROYED) {
+                        Actor._dead_count--;
+                        Actor._dead_counts[g]--;
+                        return false;
+                    } else
+                        return true;
+                });
             }
         }
     }
@@ -296,27 +314,74 @@ class Actor {
     }
 
     /**
+     * Creates an empty group.
+     * 
+     * @param {String} g name of group
+     */
+    static create_group(g) {
+
+        Actor._targets[g] = [];
+        Actor._qt_bounds.w = Actor._scene.get_w();
+        Actor._qt_bounds.h = Actor._scene.get_h();
+        Actor._quadtrees[g] = new QuadTree(
+            Actor._qt_max_objs,
+            Actor._qt_max_depth,
+            Actor._qt_bounds
+        );
+        Actor._actors[g] = [this];
+        Actor._counts[g] = 0;
+        Actor._dead_counts[g] = 0;
+    }
+
+    /**
+     * True if any trace of a group exists. If non-existent, false.
+     * 
+     * @param {String} g name of group
+     */
+    static group_exists(g) {
+
+        if (!Actor._targets[g] ||
+            !Actor._quadtrees[g] ||
+            !Actor._actors[g] ||
+            !Actor._counts[g] ||
+            !Actor._dead_counts[g]) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Static function: Transfers an actor from its existing group to a new group.
-     * (includes destroyed, excludes deleted)
+     * (excludes destroyed, excludes deleted)
      * 
      * @param  {Actor} a actor object that wants to change group
      * @param  {String} g group to change to
      */
     static change_group(a, g) {
         
-        Actor.remove_from_group(a);
-        if (!Actor._actors[g])
-            Actor._actors[g] = [];
-        Actor._actors[g].push(a);
+        if (Actor.remove_from_group(p)) {
+            if (!Actor.group_exists(g))
+                Actor.create_group(g);
+            Actor._actors[g].push(p);
+            Actor._count++;
+            Actor._counts[g]++;
+            return true;
+        }
+        return false;
     }
 
     /**
      * Static function: Removes an actor from its existing group.
-     * (includes destroyed, excludes deleted)
+     * (excludes destroyed, excludes deleted)
      * 
      * @param  {Actor} a actor object that wants to change group
+     * @returns false if not found or actor is destroyed, else true
      */
     static remove_from_group(a) {
+
+        // ignore dead
+        if (a._state >= Actor.DESTROYED)
+            return false;
         
         var oldg = a.group;
         a.group = null;
@@ -324,9 +389,12 @@ class Actor {
             var olda = Actor._actors[oldg][i];
             if (olda.sprite.id == a.sprite.id) {
                 Actor._actors[oldg][i] = null;
-                break;
+                Actor._count--;
+                Actor._counts[g]--;
+                return true;
             }
         }
+        return false;
     }
 
     /**
@@ -339,19 +407,44 @@ class Actor {
     static get_group(g) {
         return Actor._actors[g];
     }
-    
+
     /**
-     * Static property: Number of actors.
-     * (includes destroyed, excludes deleted)
-     * 
-     * @type {Number} limb count
-     */
-    static get count() {
-        var c = 0;
-        for (var g in Actor._actors)
-            c += Actor._actors[g].length;
-        return c;
-    }
+    * Number of groups.
+    * (includes empty groups)
+    * 
+    * @type {Number} group count
+    */
+    static get number_of_groups() { return Object.keys(Actor._actors).length; }
+
+    /**
+    * Number of actors in all groups.
+    * (excludes destroyed)
+    * 
+    * @type {Number} actor count
+    */
+    static get count() { return Actor._count; }
+
+    /**
+    * Number of destroyed actors in all groups.
+    * 
+    * @type {Number} actor count
+    */
+    static get dead_count() { return Actor._dead_count; }
+
+    /**
+    * Number of actors in a certain group.
+    * (excludes destroyed)
+    * 
+    * @param {Number} group
+    */
+    static group_count(group) { return Actor._counts[group]; }
+
+    /**
+    * Number of dead actors in a certain group.
+    * 
+    * @param {Number} group
+    */
+    static group_dead_count(group) { return Actor._dead_counts[group]; }
 
     /**
      * Static: Calls 'update' on all actors.
@@ -462,8 +555,8 @@ class Actor {
     /// alias of copy
     clone = this.copy;
 
-    /**
-     * Destroys the internal sprites.
+    /** @todo compare - this does not match format of <Projectile>.destroy... which one is the better method?
+     * Destroys the internal sprites. @todo fix comment - should destroy limbs or cause Actor instance to be 'dead'
      */
     destroy() {
 
@@ -473,8 +566,14 @@ class Actor {
         // queue destroy event
         var self = this;
         Actor._destroy_trigger_queue.in(() => {
-            self._state = Actor.DESTROYED;
-            self.trigger('destroy', self);
+            if (self._state < Actor.DESTROYED) {
+                Actor._count--;
+                Actor._dead_count++;
+                Actor._counts[g]--;
+                Actor._dead_counts[g]++;
+                self._state = Actor.DESTROYED;
+                self.trigger('destroy', self);
+            }
         });
     }
 
@@ -718,6 +817,10 @@ class Actor {
         Actor._create_trigger_queue = new Queue();
         Actor._destroy_trigger_queue = new Queue();
         Actor._action_complete_trigger_queue = new Queue();
+        Actor._count = 0;
+        Actor._dead_count = 0;
+        Actor._counts = {};
+        Actor._dead_counts = {};
     }
 
     /**
@@ -800,6 +903,12 @@ class Actor {
 
     /// (Private Static) Queue of one-time action-complete triggers.
     static _action_complete_trigger_queue = new Queue();
+
+    /// (Private Static) Actor count tracking
+    static _count = 0;
+    static _dead_count = 0;
+    static _dead_counts = {}
+    static _counts = {}
 
     /// (Private) State of actor. Based partially on events
     /// that have been handled.

@@ -31,6 +31,9 @@ import { View } from '../../scripts/View.js';
 import { UIBuilder } from '../../scripts/builders/UIBuilder.js';
 import { Limb } from '../../scripts/Limb.js';
 import { Interact } from '../../scripts/managers/InteractionManager.js';
+import { Projectile } from '../../scripts/projectiles/Projectile.js';
+import { ParticleBulletSystem } from '../../scripts/projectiles/ParticleBulletSystem.js';
+import { Actor } from '../../scripts/Actor.js';
 
 export { actor_builder }
 
@@ -50,7 +53,7 @@ load_limb = (image) => {
     limbs.push(limb.sprite);
     actual_limbs.push(limb);
     limb.sprite.__i = limbs.length - 1;
-    GameManager.world.load_updater(limb); // implement GARBAGE COLLECTION inside Grid
+    GameManager.world.load_updater(limb);
 
     // select sprite and update properties on right hand side
     // also auto-resize if too small
@@ -69,22 +72,35 @@ load_limb = (image) => {
 actor_builder.game_init = () => {
 
     // setup
-    Nickel.DEBUG = false;
+    Nickel.DEBUG = true;
     Game.set_bg_color("#adadad");
     Game.set_fps(120);
     GameManager.reset();
     GameManager.init(Game);
     GameManager.world = new Grid(GRID_OPTS);
     GameManager.set_groups(['game'], 'only');
+    GameManager.set_timed_custom_gc(
+        (item) => !((item instanceof Limb) && (!item.sprite || item.sprite.is_dead())),
+        actual_limbs
+    );
     UIBuilder.config(AB_UI_OPTS)
     Interact.defer_resets();
+    Interact.skip_dead();
 
     // show elements
     $('.dk-rnav').show('slow');
 
     // apply scale
-    $('#scale-x').on('change', () => selected ? selected.set_scalex(parseFloat($('#scale-x').val())) : '');
-    $('#scale-y').on('change', () => selected ? selected.set_scaley(parseFloat($('#scale-y').val())) : '');
+    $('#scale-x').on('change', () => {
+        var inp = parseFloat($('#scale-x').val());
+        if (inp <= 0) $('#scale-x').val(selected.get_scalex());
+        else selected.set_scalex(inp);
+    });
+    $('#scale-y').on('change', () => {
+        var inp = parseFloat($('#scale-y').val());
+        if (inp <= 0) $('#scale-y').val(selected.get_scaley());
+        else selected.set_scaley(inp);
+    });
     $('#pos-x').on('change', () => selected ? selected.set_x(parseFloat($('#pos-x').val())) : '');
     $('#pos-y').on('change', () => selected ? selected.set_y(parseFloat($('#pos-y').val())) : '');
     // todo: make a fake pivot graphic (like a crosshair or something) instead of setting origin directly
@@ -131,13 +147,11 @@ actor_builder.game_init = () => {
                     if (selected && selected.__i === spr.__i) {
                         selected = null;
                         console.log('Sprite unselected!');
-                        actual_limbs[spr.__i].destroy(false);
+                        actual_limbs[spr.__i].destroy();
                         console.log('Sprite destroyed! ID# '+spr.id);
-                        limbs.splice(spr.__i, 1);
                     } else {
-                        actual_limbs[spr.__i].destroy(false);
+                        actual_limbs[spr.__i].destroy();
                         console.log('Sprite destroyed! ID# '+spr.id);
-                        limbs.splice(spr.__i, 1);
                     }
                 })
                 .else((mpos) => {
@@ -205,6 +219,28 @@ actor_builder.game_init = () => {
 
     // for testing...
     Nickel.GLOBALS.gm = GameManager;
+    Nickel.GLOBALS.counts = (clear=true) => {
+        if (clear) console.clear();
+        console.log("\
+        Projectile:\n\
+            groups:             " + Projectile.number_of_groups + "\n\
+            count:              " + Projectile.count + "\n\
+            dead:               " + Projectile.dead_count + "\n\
+        ParticleBulletSystem:\n\
+            groups:             " + ParticleBulletSystem.number_of_groups + "\n\
+            count (systems):    " + ParticleBulletSystem.count + "\n\
+            count (particles):  " + ParticleBulletSystem.particle_count + "\n\
+            dead (systems):     " + ParticleBulletSystem.dead_count + "\n\
+        Actor:\n\
+            groups:             " + Actor.number_of_groups + "\n\
+            count:              " + Actor.count + "\n\
+            dead:               " + Actor.dead_count + "\n\
+        World:\n\
+            count:              " + GameManager.world.load.length + "\n\
+        GC:\n\
+            time left:          " + Math.round(GameManager._gc_timer.remaining() / 1000) + "s\n\
+        ");
+    }
 }
 
 // Game Loop:

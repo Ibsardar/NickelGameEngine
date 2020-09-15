@@ -219,14 +219,14 @@ class SmartBullet extends StickyBullet {
      * Static function: removes all destroyed projectiles. Also
      * removes empty groups. Does not trigger delete event by
      * default.
-     * * note: also applies parent class deletions
+     * * note: also applies parent class deletions //@todo replace this comment with the proper warning
      * 
-     * @param {Boolean} [trigger=false] trigger delete events
+     * @param {Boolean} [trigger=false] trigger delete events //@todo remove this parameter
      */
     static delete_destroyed(trigger=false) {
 
         // parent class deletions
-        StickyBullet.delete_destroyed(trigger);
+        //StickyBullet.delete_destroyed(trigger);
 
         // delete from this class
         var ps = SmartBullet._p_smarties;
@@ -244,10 +244,11 @@ class SmartBullet extends StickyBullet {
     /**
      * @overrides parent class function.
      * Resets all static data to the default values.
+     * If deep is false, then do not reset parent class.
      */
-    static reset() {
+    static reset(deep=true) {
 
-        StickyBullet.reset();
+        if (deep) StickyBullet.reset();
         SmartBullet._p_smarties = {};
     }
     

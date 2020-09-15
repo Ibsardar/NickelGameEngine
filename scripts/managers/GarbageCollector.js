@@ -18,12 +18,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-import { Game } from "../game.js";
 import { Actor } from "../Actor.js";
 import { Projectile } from "../projectiles/Projectile.js";
 import { ParticleBulletSystem } from "../projectiles/ParticleBulletSystem.js";
 import { Hazard } from "../misc/Hazard.js";
 import { GameManager } from "./GameManager.js";
+import { Skeleton } from "../Skeleton.js";
 
 export { GarbageCollector, GarbageCollector as Garbage }; // also export an alias
 
@@ -57,40 +57,59 @@ class GarbageCollector {
      * parameters for each class.
      * 
      * @param {class} classref
+     * @param {boolean} trigger_delete_events
      * @param  {...any} args 
      */
-    static collect(classref=null, ...args) {
+    static collect(classref=null, trigger_delete_events=false, ...args) {
 
         switch (classref) {
             case null:
-                GarbageCollector._gc_actor();
-                GarbageCollector._gc_projectile();
-                GarbageCollector._gc_pbs();
+                GarbageCollector._gc_actor(trigger_delete_events);
+                GarbageCollector._gc_projectile(trigger_delete_events);
+                GarbageCollector._gc_pbs(trigger_delete_events);
                 GarbageCollector._gc_hazard();
-                GarbageCollector._gc_locomotive();
-                GarbageCollector._gc_sprite();
+                GarbageCollector._gc_sprite_and_locomotive();
                 break;
             case Actor:
-                GarbageCollector._gc_actor(args);
+                GarbageCollector._gc_actor(trigger_delete_events, ...args);
                 break;
             case Projectile:
-                GarbageCollector._gc_projectile(args);
+                GarbageCollector._gc_projectile(trigger_delete_events, ...args);
                 break;
             case ParticleBulletSystem:
-                GarbageCollector._gc_pbs(args);
+                GarbageCollector._gc_pbs(trigger_delete_events, ...args);
                 break;
             case Hazard:
-                GarbageCollector._gc_hazard(args);
+                GarbageCollector._gc_hazard(...args);
                 break;
             case Locomotive:
-                GarbageCollector._gc_locomotive(args);
+                GarbageCollector._gc_locomotive(...args);
                 break;
             case Sprite:
-                GarbageCollector._gc_sprite(args);
+                GarbageCollector._gc_sprite(...args);
                 break;
             default:
                 console.error('ERROR: GarbageCollector>collect: class reference '+classref+'not found.');
         }
+    }
+
+    /**
+     * Collect garbage from the world as well as from a custom set
+     * of lists (if any) with the garbage_filter which must return
+     * false when the item is garbage.
+     * 
+     * @param  {(item) => {}} garbage_filter callback function
+     * @param  {...} lists searchable arrays to collect garbage from
+     */
+    static custom(garbage_filter = (item) => {}, ...lists) {
+
+        // remove from world
+        if (GameManager.world)
+            GameManager.world.load = GameManager.world.load.filter(garbage_filter);
+
+        // remove from each list
+        for (let list of lists)
+            list = list.filter(garbage_filter);
     }
 
     static _gc_actor(trigger_delete_events=false, ...lists) {
@@ -180,6 +199,27 @@ class GarbageCollector {
             list = list.filter(
                 item => item && (
                     (item instanceof Sprite && !item.dead) || !(item instanceof Sprite)
+                )
+            );
+    }
+
+    static _gc_sprite_and_locomotive(...lists) {
+
+        // remove from world
+        if (GameManager.world)
+            GameManager.world.load = GameManager.world.load.filter(
+                item => item && (
+                    ((item instanceof Sprite && !item.dead) || !(item instanceof Sprite)) ||
+                    ((item instanceof Locomotive && !item.dead) || !(item instanceof Locomotive))
+                )
+            );
+
+        // remove from each list
+        for (let list of lists)
+            list = list.filter(
+                item => item && (
+                    ((item instanceof Sprite && !item.dead) || !(item instanceof Sprite)) ||
+                    ((item instanceof Locomotive && !item.dead) || !(item instanceof Locomotive))
                 )
             );
     }

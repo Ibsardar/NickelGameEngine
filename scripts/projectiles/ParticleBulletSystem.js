@@ -136,6 +136,15 @@ class ParticleBulletSystem {
             ptc
         );
 
+        // increment counts
+        ParticleBulletSystem._count++
+        if (ParticleBulletSystem._counts[data.group]) {
+            ParticleBulletSystem._counts[data.group]++;
+        } else {
+            ParticleBulletSystem._counts[data.group] = 1;
+            ParticleBulletSystem._dead_counts[data.group] = 0;
+        }
+
         // set initialization completed state
         this._state = ParticleBulletSystem.INITIALIZED;
     }
@@ -151,7 +160,7 @@ class ParticleBulletSystem {
         ParticleBulletSystem._targets[group] = targets;
     }
 
-    /**
+    /** 
      * Static function: removes system + particles but not its quadtree
      * or targets from a certain group. Does not trigger delete event by
      * default. Does not internally destroy system by default. Does not
@@ -194,6 +203,10 @@ class ParticleBulletSystem {
      */
     static delete_group(group, trigger=false) {
 
+        // decrement counts
+        ParticleBulletSystem._count -= ParticleBulletSystem._counts[group];
+        ParticleBulletSystem._dead_count -= ParticleBulletSystem._dead_counts[group];
+
         // trigger delete event for every particle
         if (trigger) {
             var gp = ParticleBulletSystem._systems[group];
@@ -208,24 +221,20 @@ class ParticleBulletSystem {
         delete ParticleBulletSystem._targets[group];
         delete ParticleBulletSystem._systems[group];
         delete ParticleBulletSystem._quadtrees[group];
+        delete ParticleBulletSystem._counts[group];
+        delete ParticleBulletSystem._dead_counts[group];
     }
 
     /**
-     * Static function: removes all destroyed systems. Also
-     * removes empty groups. Does not trigger delete event by
+     * Static function: removes all destroyed systems. Doesn't
+     * remove empty groups. Does not trigger delete event by
      * default.
      * 
      * @param {Boolean} [trigger=false] trigger delete events
      */
     static delete_destroyed(trigger=false) {
 
-        
         var ps = ParticleBulletSystem._systems;
-
-        // remove empty groups
-        for (var i in ps) 
-            if (!ps[i] || !ps[i].length)
-                delete ps[i];
 
         // for each destroyed system in every group:
         // - trigger delete if trigger=true
@@ -234,9 +243,11 @@ class ParticleBulletSystem {
 
             // if we want to trigger events
             if (trigger) {
-                ps[g] = ps[g].filter(function(sys) {
+                ps[g] = ps[g].filter(sys => {
                     if (!sys) return false;
                     if (sys._state == ParticleBulletSystem.DESTROYED) {
+                        ParticleBulletSystem._dead_count--;
+                        ParticleBulletSystem._dead_counts[g]--;
                         var ptcs = sys._ps.queue.data();
                         for (let ptc of ptcs)
                             sys._trigger('delete', sys, ptc);
@@ -245,11 +256,17 @@ class ParticleBulletSystem {
                         return true;
                 });
 
-            // if we don't want to trigger events
+            // if we don't want to trigger events 
             } else {
-                ps[g] = ps[g].filter(sys =>
-                    sys && sys._state != ParticleBulletSystem.DESTROYED
-                );
+                ps[g] = ps[g].filter(sys =>{
+                    if (!sys) return false;
+                    if (sys._state == ParticleBulletSystem.DESTROYED) {
+                        ParticleBulletSystem._dead_count--;
+                        ParticleBulletSystem._dead_counts[g]--;
+                        return false;
+                    } else
+                        return true;
+                });
             }
         }
     }
@@ -427,6 +444,16 @@ class ParticleBulletSystem {
         for (var g in ps) {
             for (var i in ps[g]) {
 
+                // system dead events
+                if (ps[g][i].dead && ps[g][i]._state != ParticleBulletSystem.DESTROYED) {
+                    ParticleBulletSystem._count--;
+                    ParticleBulletSystem._dead_count++;
+                    ParticleBulletSystem._counts[g]--;
+                    ParticleBulletSystem._dead_counts[g]++;
+                    ps[g][i]._state = ParticleBulletSystem.DESTROYED;
+                    // can call an event like 'destroy-system' here...
+                }
+
                 // get all particles in this system
                 var ptcs = ps[g][i]._ps.queue.data();
 
@@ -434,7 +461,7 @@ class ParticleBulletSystem {
                 for (let ptc of ptcs) {
                     if (ptc.dead && !ptc.was_dead) {
                         ptc.was_dead = true;
-                        ps[g][i]._trigger('destroy', ps[g][i], ptc);
+                        ps[g][i]._trigger('destroy', ps[g][i], ptc); /** @warning ptc queue auto-pushes ptcs out so this won't fire reliably */
                     }
                 }
             }
@@ -487,37 +514,88 @@ class ParticleBulletSystem {
     }
 
     /**
+     * Creates an empty group.
+     * 
+     * @param {String} g name of group
+     */
+    static create_group(g) {
+
+        ParticleBulletSystem._targets[g] = [];
+        ParticleBulletSystem._qt_bounds.w = ParticleBulletSystem._scene.get_w();
+        ParticleBulletSystem._qt_bounds.h = ParticleBulletSystem._scene.get_h();
+        ParticleBulletSystem._quadtrees[g] = new QuadTree(
+            ParticleBulletSystem._qt_max_objs,
+            ParticleBulletSystem._qt_max_depth,
+            ParticleBulletSystem._qt_bounds
+        );
+        ParticleBulletSystem._projectiles[g] = [this];
+        ParticleBulletSystem._counts[g] = 0;
+        ParticleBulletSystem._dead_counts[g] = 0;
+    }
+
+    /**
+     * True if any trace of a group exists. If non-existent, false.
+     * 
+     * @param {String} g name of group
+     */
+    static group_exists(g) {
+
+        if (!ParticleBulletSystem._targets[g] ||
+            !ParticleBulletSystem._quadtrees[g] ||
+            !ParticleBulletSystem._projectiles[g] ||
+            !ParticleBulletSystem._counts[g] ||
+            !ParticleBulletSystem._dead_counts[g]) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Static function: Transfers a system from its existing group to a new group.
-     * (includes destroyed, excludes deleted)
+     * (excludes destroyed, excludes deleted)
      * 
      * @param  {ParticleBulletSystem} p system object that wants to change group
      * @param  {String} g group to change to
      */
     static change_group(p, g) {
         
-        ParticleBulletSystem.remove_from_group(p);
-        if (!ParticleBulletSystem._systems[g])
-            ParticleBulletSystem._systems[g] = [];
-        ParticleBulletSystem._systems[g].push(p);
+        if (ParticleBulletSystem.remove_from_group(p)) {
+            if (!ParticleBulletSystem.group_exists(g))
+                ParticleBulletSystem.create_group(g);
+            ParticleBulletSystem._projectiles[g].push(p);
+            ParticleBulletSystem._count++;
+            ParticleBulletSystem._counts[g]++;
+            return true;
+        }
+        return false;
     }
 
     /**
-     * Static function: Removes a system from its existing group.
-     * (includes destroyed, excludes deleted)
+     * Static function: Removes a system from its existing group
+     * without triggereing any delete/destroy events.
+     * (excludes destroyed, excludes deleted)
      * 
      * @param  {ParticleBulletSystem} p system object that wants to change group
+     * @returns false if not found or pbs is destroyed, else true
      */
-    static remove_from_group(p) {
+    static remove_from_group(p, ignore_count=false) {
+
+        // ignore dead
+        if (p._state >= ParticleBulletSystem.DESTROYED)
+            return false;
         
         var oldg = p.group;
         p.group = null;
         for (var i in ParticleBulletSystem._systems[oldg]) {
             var oldp = ParticleBulletSystem._systems[oldg][i];
             if (oldp.sprite.id == p.sprite.id) {
-                ParticleBulletSystem._systems[oldg][i] = null;
-                break;
+                ParticleBulletSystem._count--;
+                ParticleBulletSystem._counts[g]--;
+                ParticleBulletSystem._systems[oldg].splice(index, 1);
+                return true;
             }
         }
+        return false;
     }
 
     /**
@@ -550,46 +628,75 @@ class ParticleBulletSystem {
                     return true;
         return false;
     }
-    
+
     /**
-     * Number of particles in all systems.
-     * (includes destroyed, excludes deleted)
-     * *** @warning : expensive operation ***
-     * 
-     * @type {Number} particle count
-     */
+    * Number of groups.
+    * (includes empty groups)
+    * 
+    * @type {Number} group count
+    */
+    static get number_of_groups() { return Object.keys(ParticleBulletSystem._systems).length; }
+
+    /**
+    * Number of systems in all groups.
+    * (excludes destroyed)
+    * 
+    * @type {Number} system count
+    */
+    static get count() { return ParticleBulletSystem._count; }
+
+    /**
+    * Number of destroyed systems in all groups.
+    * 
+    * @type {Number} system count
+    */
+    static get dead_count() { return ParticleBulletSystem._dead_count; }
+
+    /**
+    * Number of particles in all groups.
+    * 
+    * @type {Number} particle count
+    */
     static get particle_count() {
-
         var c = 0;
-        for (let g of Object.values(ParticleBulletSystem._systems))
-            for (let sys of g)
-                c += sys._ps.queue.data().length;
+        for (var g in ParticleBulletSystem._systems)
+            for (var s in ParticleBulletSystem._systems[g])
+                c += ParticleBulletSystem._systems[g][s]._ps.queue.count();
         return c;
     }
 
-     /**
-     * Number of systems in all groups.
-     * (includes destroyed, excludes deleted)
-     * 
-     * @type {Number} system count
-     */
-    static get system_count() {
-
-        var c = 0;
-        for (let g of Object.values(ParticleBulletSystem._systems))
-            c += g.length;
-        return c;
-    }
-    
     /**
-     * Number of groups.
-     * (excludes deleted)
-     * 
-     * @type {Number} group count
-     */
-    static get group_count() {
+    * Number of particles in this system.
+    * 
+    * @type {Number} particle count
+    */
+    get particle_count() { return this._ps.queue.count(); }
 
-        return Object.keys(ParticleBulletSystem._systems).length;
+    /**
+    * Number of systems in a certain group.
+    * (excludes destroyed)
+    * 
+    * @param {String} group
+    */
+    static group_count(group) { return ParticleBulletSystem._counts[group]; }
+
+    /**
+    * Number of dead systems in a certain group.
+    * 
+    * @param {String} group
+    */
+    static group_dead_count(group) { return ParticleBulletSystem._dead_counts[group]; }
+
+    /**
+    * Number of particles in a certain group.
+    * 
+    * @param {String} group
+    */
+    static group_particle_count(group) {
+        var c = 0;
+        for (var s in ParticleBulletSystem._systems[group])
+            c += ParticleBulletSystem._systems[group][s]._ps.queue.count();
+        return c;
     }
 
     /**
@@ -829,6 +936,10 @@ class ParticleBulletSystem {
             destroy : new Queue(),
             delete : new Queue()
         }
+        ParticleBulletSystem._count = 0;
+        ParticleBulletSystem._dead_count = 0;
+        ParticleBulletSystem._counts = {};
+        ParticleBulletSystem._dead_counts = {};
     }
 
     /**
@@ -838,14 +949,6 @@ class ParticleBulletSystem {
      */
     get position() { return this._ps.pos; }
     set position(pos) { this._ps.pos = pos; }
-
-    /**
-     * Number of particles in this system.
-     * *** warning: expensive operation ***
-     * 
-     * @type {Number} amount of particles
-     */
-    get count() { return this._ps.queue.data().length; }
 
     /**
      * Visibility of system.
@@ -965,6 +1068,12 @@ class ParticleBulletSystem {
         destroy : new Queue(),
         delete : new Queue()
     }
+
+    /// (Private Static) Tracking system counts.
+    static _count = 0;
+    static _dead_count = 0;
+    static _dead_counts = {}
+    static _counts = {}
 
     /// (Private) State of system.
     _state = 0;

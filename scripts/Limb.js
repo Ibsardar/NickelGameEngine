@@ -738,7 +738,7 @@ class Limb {
     /**
      * Deletes and destroys self.
      * 
-     * @param {Boolean} should the underlying sprite be marked as dead? Otherwise will be destroyed
+     * @param {Boolean} mark_sprite_as_dead underlying sprite be marked as dead? Otherwise will be destroyed
      */
     destroy(mark_sprite_as_dead=true) {
 

@@ -185,14 +185,14 @@ class StickyBullet extends Bullet {
      * Static function: removes all destroyed projectiles. Also
      * removes empty groups. Does not trigger delete event by
      * default.
-     * * note: also applies parent class deletions
+     * * note: also applies parent class deletions //@todo replace this comment with the proper warning
      * 
-     * @param {Boolean} [trigger=false] trigger delete events
+     * @param {Boolean} [trigger=false] trigger delete events //@todo remove this parameter
      */
     static delete_destroyed(trigger=false) {
 
         // parent class deletions
-        Bullet.delete_destroyed(trigger);
+        //Bullet.delete_destroyed(trigger);
 
         // delete from this class
         var ps = StickyBullet._p_stickies;
@@ -292,10 +292,11 @@ class StickyBullet extends Bullet {
     /**
      * @overrides parent class function.
      * Resets all static data to the default values.
+     * If deep is false, then do not reset parent class.
      */
-    static reset() {
+    static reset(deep=true) {
 
-        Bullet.reset();
+        if (deep) Bullet.reset();
         StickyBullet._p_stickies = {};
     }
 

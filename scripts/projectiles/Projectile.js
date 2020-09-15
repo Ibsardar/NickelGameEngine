@@ -107,6 +107,15 @@ class Projectile {
         if (pdata.on_destroyed) this.on('destroy', pdata.on_destroyed);
         if (pdata.on_delete) this.on('delete', pdata.on_delete);
 
+        // increment created count
+        Projectile._count++
+        if (Projectile._counts[pdata.group])
+            Projectile._counts[pdata.group]++;
+        else {
+            Projectile._counts[pdata.group] = 1;
+            Projectile._dead_counts[pdata.group] = 0;
+        }
+
         // trigger create event
         this._state = Projectile.INITIALIZED;
     }
@@ -116,7 +125,7 @@ class Projectile {
      * Projectile object.
      * 
      * @param  {Projectile} projectile
-     * @param  {Object} bounds
+     * @param  {left:0, right:0, top:0, bottom:0} bounds
      */
     static set_bounds(projectile, bounds) {
 
@@ -157,6 +166,10 @@ class Projectile {
      */
     static delete_group(group, trigger=false) {
 
+        // decrement counts
+        Projectile._count -= Projectile._counts[group];
+        Projectile._dead_count -= Projectile._dead_counts[group];
+
         // trigger delete event for each removed projectile
         if (trigger) {
             var gp = Projectile._projectiles[group];
@@ -169,12 +182,14 @@ class Projectile {
         delete Projectile._targets[group];
         delete Projectile._projectiles[group];
         delete Projectile._quadtrees[group];
+        delete Projectile._counts[group];
+        delete Projectile._dead_counts[group];
     }
 
     /**
-     * Static function: removes all destroyed projectiles. Also
-     * removes empty groups. Does not trigger delete event by
-     * default. DOES remove false indices in lists.
+     * Static function: removes all destroyed projectiles. Doesn't
+     * remove empty groups. Does not trigger delete event by
+     * default. DOES remove falsey indices in lists.
      * 
      * @param {Boolean} [trigger=false] trigger delete events
      */
@@ -182,28 +197,31 @@ class Projectile {
 
         var ps = Projectile._projectiles;
 
-        // remove empty groups
-        for (var i in ps) 
-            if (!ps[i] || !ps[i].length)
-                delete ps[i];
-
         // for each destroyed projectile in all groups:
         // - trigger delete if trigger=true
         // - remove from list
         for (var g in ps) {
             if (trigger) {
-                ps[g] = ps[g].filter(function(p){
+                ps[g] = ps[g].filter(p => {
                     if (!p) return false;
                     if (p._state == Projectile.DESTROYED) {
+                        Projectile._dead_count--;
+                        Projectile._dead_counts[g]--;
                         p.trigger('delete', p);
                         return false;
                     } else
                         return true;
                 });
             } else {
-                ps[g] = ps[g].filter(p =>
-                    p && p._state != Projectile.DESTROYED
-                );
+                ps[g] = ps[g].filter(p => {
+                    if (!p) return false;
+                    if (p._state == Projectile.DESTROYED) {
+                        Projectile._dead_count--;
+                        Projectile._dead_counts[g]--;
+                        return false;
+                    } else
+                        return true;
+                });
             }
         }
     }
@@ -326,6 +344,10 @@ class Projectile {
         for (var g in ps) {
             for (var i in ps[g]) {
                 if (ps[g][i].sprite.is_destroyed() && ps[g][i]._state != Projectile.DESTROYED) {
+                    Projectile._count--;
+                    Projectile._dead_count++;
+                    Projectile._counts[g]--;
+                    Projectile._dead_counts[g]++;
                     ps[g][i]._state = Projectile.DESTROYED;
                     ps[g][i].trigger('destroy', ps[g][i]);
                 }
@@ -344,37 +366,88 @@ class Projectile {
     }
 
     /**
+     * Creates an empty group.
+     * 
+     * @param {String} g name of group
+     */
+    static create_group(g) {
+
+        Projectile._targets[g] = [];
+        Projectile._qt_bounds.w = Projectile._scene.get_w();
+        Projectile._qt_bounds.h = Projectile._scene.get_h();
+        Projectile._quadtrees[g] = new QuadTree(
+            Projectile._qt_max_objs,
+            Projectile._qt_max_depth,
+            Projectile._qt_bounds
+        );
+        Projectile._projectiles[g] = [this];
+        Projectile._counts[g] = 0;
+        Projectile._dead_counts[g] = 0;
+    }
+
+    /**
+     * True if any trace of a group exists. If non-existent, false.
+     * 
+     * @param {String} g name of group
+     */
+    static group_exists(g) {
+
+        if (!Projectile._targets[g] ||
+            !Projectile._quadtrees[g] ||
+            !Projectile._projectiles[g] ||
+            !Projectile._counts[g] ||
+            !Projectile._dead_counts[g]) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Static function: Transfers a projectile from its existing group to a new group.
-     * (includes destroyed, excludes deleted)
+     * (excludes destroyed, excludes deleted)
      * 
      * @param  {Projectile} p projectile object that wants to change group
      * @param  {String} g group to change to
      */
     static change_group(p, g) {
         
-        Projectile.remove_from_group(p);
-        if (!Projectile._projectiles[g])
-            Projectile._projectiles[g] = [];
-        Projectile._projectiles[g].push(p);
+        if (Projectile.remove_from_group(p)) {
+            if (!Projectile.group_exists(g))
+                Projectile.create_group(g);
+            Projectile._projectiles[g].push(p);
+            Projectile._count++;
+            Projectile._counts[g]++;
+            return true;
+        }
+        return false;
     }
 
     /**
-     * Static function: Removes a projectile from its existing group.
-     * (includes destroyed, excludes deleted)
+     * Static function: Removes a projectile from its existing group
+     * without triggering any delete/destroy triggers.
+     * (excludes destroyed, excludes deleted)
      * 
      * @param  {Projectile} p projectile object that wants to change group
+     * @returns false if not found or projectile is destroyed, else true
      */
     static remove_from_group(p) {
+
+        // ignore dead
+        if (p._state >= Projectile.DESTROYED)
+            return false;
         
         var oldg = p.group;
         p.group = null;
         for (var i in Projectile._projectiles[oldg]) {
             var oldp = Projectile._projectiles[oldg][i];
             if (oldp.sprite.id == p.sprite.id) {
-                Projectile._projectiles[oldg][i] = null;
-                break;
+                Projectile._projectiles[oldg].splice(i, 1);
+                Projectile._count--;
+                Projectile._counts[oldg]--;
+                return true;
             }
         }
+        return false;
     }
 
     /**
@@ -387,32 +460,44 @@ class Projectile {
     static get_group(g) {
         return Projectile._projectiles[g];
     }
-    
-    /**
-     * Static property: Number of projectiles.
-     * (includes destroyed, excludes deleted)
-     * 
-     * @type {Number} projectile count
-     */
-    static get count() {
 
-        var c = 0;
-        for (var g in Projectile._projectiles)
-            c += Projectile._projectiles[g].length;
-            
-        return c;
-    }
-    
     /**
-     * Static property: Number of groups.
-     * (excludes deleted)
-     * 
-     * @type {Number} group count
-     */
-    static get group_count() {
+    * Number of groups.
+    * (includes empty groups)
+    * 
+    * @type {Number} group count
+    */
+    static get number_of_groups() { return Object.keys(Projectile._projectiles).length; }
 
-        return Object.keys(Projectile._projectiles).length;
-    }
+    /**
+    * Number of projectiles in all groups.
+    * (excludes destroyed)
+    * 
+    * @type {Number} projectile count
+    */
+    static get count() { return Projectile._count; }
+
+    /**
+    * Number of destroyed projectiles in all groups.
+    * 
+    * @type {Number} projectile count
+    */
+    static get dead_count() { return Projectile._dead_count; }
+
+    /**
+    * Number of projectiles in a certain group.
+    * (excludes destroyed)
+    * 
+    * @param {Number} group
+    */
+    static group_count(group) { return Projectile._counts[group]; }
+
+    /**
+    * Number of dead projectiles in a certain group.
+    * 
+    * @param {Number} group
+    */
+    static group_dead_count(group) { return Projectile._dead_counts[group]; }
 
     /**
      * Static: Calls 'update' on all projectiles.
@@ -592,6 +677,10 @@ class Projectile {
         };
         Projectile._qt_max_objs = 3;
         Projectile._qt_max_depth = 4;
+        Projectile._count = 0;
+        Projectile._dead_count = 0;
+        Projectile._counts = {};
+        Projectile._dead_counts = {};
     }
 
     /**
@@ -703,6 +792,12 @@ class Projectile {
 
     /// (Private Static) Quadtree max tree depth.
     static _qt_max_depth = 4;
+
+    /// (Static Private) Projectile count tracking
+    static _count = 0;
+    static _dead_count = 0;
+    static _dead_counts = {}; // format same as _projectiles
+    static _counts = {}; // format same as _projectiles
 
     /// (Private) State of projectile. Based partially on events
     /// that have been handelled.
