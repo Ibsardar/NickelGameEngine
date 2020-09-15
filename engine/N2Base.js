@@ -50,11 +50,13 @@ var Nickel = {
 
     /* Static
     *  - states (unused)
-    *  - a debugging option       ***NOT YET IMPLEMENTED***TODO***
+    *  - a debugging option                 ***NOT IMPLEMENTED INTERNALLY***
+    *  - a verbose option for debugging     ***NOT IMPLEMENTED INTERNALLY***
     *  - browser detection
     *  - key mappings
     */
     DEBUG     : false,
+    VERBOSE   : false,
     STATES    : {
         FREE        : 1000,
         BLOCKED     : 1001

@@ -73,6 +73,7 @@ actor_builder.game_init = () => {
 
     // setup
     Nickel.DEBUG = true;
+    Nickel.VERBOSE = false;
     Game.set_bg_color("#adadad");
     Game.set_fps(120);
     GameManager.reset();
@@ -128,22 +129,22 @@ actor_builder.game_init = () => {
 
             Interact.onhover(limbs)
                 .top()
-                .enter((spr,mpos) => {console.log('onhover>top>enter>'+spr.id+'@'+mpos)})
-                .while((spr,mpos) => {console.log('onhover>top>while>'+spr.id+'@'+mpos)})
-                .leave((spr,mpos) => {console.log('onhover>top>leave>'+spr.id+'@'+mpos)})
-                .else((mpos) => {/*console.log('onhover>top>else>[no sprite]@'+mpos)*/});
+                .enter((spr,mpos) => {if (Nickel.VERBOSE) console.log('onhover>top>enter>'+spr.id+'@'+mpos)})
+                .while((spr,mpos) => {if (Nickel.VERBOSE) console.log('onhover>top>while>'+spr.id+'@'+mpos)})
+                .leave((spr,mpos) => {if (Nickel.VERBOSE) console.log('onhover>top>leave>'+spr.id+'@'+mpos)})
+                .else((mpos) => {/*if (Nickel.VERBOSE) console.log('onhover>top>else>[no sprite]@'+mpos)*/});
 
             Interact.onhover(limbs)
                 .all_reversed()
-                .enter((sprs,mpos) => {console.log('onhover>top>enter>[('+sprs.length+') sprites]@'+mpos)})
-                .while((sprs,mpos) => {console.log('onhover>top>while>[('+sprs.length+') sprites]@'+mpos)})
-                .leave((sprs,mpos) => {console.log('onhover>top>leave>[('+sprs.length+') sprites]@'+mpos)})
-                .else((mpos) => {/*console.log('onhover>top>else>[no sprite]@'+mpos)*/});
+                .enter((sprs,mpos) => {if (Nickel.VERBOSE) console.log('onhover>top>enter>[('+sprs.length+') sprites]@'+mpos)})
+                .while((sprs,mpos) => {if (Nickel.VERBOSE) console.log('onhover>top>while>[('+sprs.length+') sprites]@'+mpos)})
+                .leave((sprs,mpos) => {if (Nickel.VERBOSE) console.log('onhover>top>leave>[('+sprs.length+') sprites]@'+mpos)})
+                .else((mpos) => {/*if (Nickel.VERBOSE) console.log('onhover>top>else>[no sprite]@'+mpos)*/});
 
             Interact.onrightclick(limbs)
                 .top()
                 .do((spr,mpos) => {
-                    console.log('onrightclick>top>do>'+spr.id+'@'+mpos);
+                    if (Nickel.VERBOSE) console.log('onrightclick>top>do>'+spr.id+'@'+mpos);
                     if (selected && selected.__i === spr.__i) {
                         selected = null;
                         console.log('Sprite unselected!');
@@ -155,35 +156,35 @@ actor_builder.game_init = () => {
                     }
                 })
                 .else((mpos) => {
-                    console.log('onrightclick>top>do>else>[no sprite]@'+mpos);
+                    if (Nickel.VERBOSE) console.log('onrightclick>top>do>else>[no sprite]@'+mpos);
                 });
                 
             Interact.onleftclick(limbs)
                 .top()
                 .do((spr,mpos) => {
-                    console.log('onleftclick>top>do>'+spr.id+'@'+mpos);
+                    if (Nickel.VERBOSE) console.log('onleftclick>top>do>'+spr.id+'@'+mpos);
                     selected = spr;
                     console.log('Sprite selected! ID# '+spr.id);
                 })
                 .else((mpos) => {
-                    console.log('onleftclick>top>do>else>[no sprite]@'+mpos);
+                    if (Nickel.VERBOSE) console.log('onleftclick>top>do>else>[no sprite]@'+mpos);
                     selected = null;
                     console.log('Sprite unselected!');
                 });
             Interact.onleftclick(limbs)
                 .bottom()
-                .do((spr,mpos) => console.log('onleftclick>bottom>do>'+spr.id+'@'+mpos));
+                .do((spr,mpos) => {if (Nickel.VERBOSE) console.log('onleftclick>bottom>do>'+spr.id+'@'+mpos)});
             Interact.onleftclick(limbs)
                 .all()
-                .do((sprs,mpos) => console.log('onleftclick>all>do>[('+sprs.length+') sprites]@'+mpos));
+                .do((sprs,mpos) => {if (Nickel.VERBOSE) console.log('onleftclick>all>do>[('+sprs.length+') sprites]@'+mpos)});
             Interact.onleftclick(limbs)
                 .all_reversed()
-                .do((sprs,mpos) => console.log('onleftclick>all_reversed>do>[('+sprs.length+') sprites]@'+mpos));
+                .do((sprs,mpos) => {if (Nickel.VERBOSE) console.log('onleftclick>all_reversed>do>[('+sprs.length+') sprites]@'+mpos)});
 
             Interact.drag(limbs)
-                .start((spr,mpos) => console.log('drag>start>'+spr.id+'@'+mpos))
-                .while((spr,mpos) => console.log('drag>while>'+spr.id+'@'+mpos))
-                .end((spr,mpos) => console.log('drag>end>'+spr.id+'@'+mpos));
+                .start((spr,mpos) => {if (Nickel.VERBOSE) console.log('drag>start>'+spr.id+'@'+mpos)})
+                .while((spr,mpos) => {if (Nickel.VERBOSE) console.log('drag>while>'+spr.id+'@'+mpos)})
+                .end((spr,mpos)   => {if (Nickel.VERBOSE) console.log('drag>end>'+spr.id+'@'+mpos)});
 
             Interact.reset();
         }
