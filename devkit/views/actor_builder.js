@@ -33,10 +33,98 @@ import { Interact } from '../../scripts/managers/InteractionManager.js';
 
 export { actor_builder }
 
-// Module Globals
+// Module Globals (variables)
 var actor_builder = new View();
 var limbs = [];
 var selected;
+var mode='select'; // body, select, pivot, connect, joint
+var snaps=[0,0];
+var bg;
+
+// Module Globals (functions)
+var select = (item) => {
+
+    // select item and update properties on right hand side
+    selected = item;
+    $('#scale-x').val(selected.sprite.get_scalex());
+    $('#scale-y').val(selected.sprite.get_scaley());
+    $('#pos-x').val(selected.sprite.get_x());
+    $('#pos-y').val(selected.sprite.get_y());
+    $('#pivot-x').val(selected.sprite.get_origin()[0]); // don't set origin directly
+    $('#pivot-y').val(selected.sprite.get_origin()[1]); // don't set origin directly
+    console.log('Item selected! Sprite-ID# '+selected.sprite.id);
+}
+var unselect = () => {
+
+    // unselect item and clear properties on right hand side
+    selected = null;
+    $('#scale-x').val('');
+    $('#scale-y').val('');
+    $('#pos-x').val('');
+    $('#pos-y').val('');
+    $('#pivot-x').val('');
+    $('#pivot-y').val('');
+    console.log('Item unselected!');
+}
+var snap = (item) => {
+
+    // snap the item separately in x and y coordinates
+    if (snaps[0]) {
+        var x = Nickel.util.round(item.sprite.get_x()/snaps[0]) * snaps[0];
+        item.sprite.set_x(x);
+    }
+    if (snaps[1]) {
+        var y = Nickel.util.round(item.sprite.get_y()/snaps[1]) * snaps[1];
+        item.sprite.set_y(y);
+    }
+}
+var reset_grid = () => {
+
+    // replace grid (with snapped lines)
+    if (snaps[0] || snaps[1]) {
+        var sectors = [
+            !snaps[0] ? 0 : Math.ceil(Game.get_w() / snaps[0]),
+            !snaps[1] ? 0 : Math.ceil(Game.get_h() / snaps[1])
+        ];
+        bg = UIBuilder.grid({
+            replace : bg,
+            width : !snaps[0] ? Game.get_w() : sectors[0] * snaps[0], // overestimate width
+            height : !snaps[1] ? Game.get_h() : sectors[1] * snaps[1], // overestimate height
+            grid_color : '#494943', // slightly yellow when snapping
+            rows : !snaps[1] ? 1 : sectors[1],
+            cols : !snaps[0] ? 1 : sectors[0],
+            border_thickness : 1
+        });
+        console.log('Grid snapped!');
+    // replace grid (with default liness)
+    } else {
+        bg = UIBuilder.grid({
+            replace : bg,
+            position : [0,0],
+            width : Game.get_w(),
+            height : Game.get_h(),
+            grid_color : '#434343'
+        });
+        console.log('Grid reset to default!');
+    }
+}
+// (defined in devkit.html)
+load_limb = (image) => {
+
+    // load image as limb and set in center of view
+    var limb = new Limb(Game, image, true);
+    var ctr = GameManager.world.get_grid_point([Game.get_w()/2, Game.get_h()/2]);
+    limb.sprite.set_center(ctr[0], ctr[1]);
+    limbs.push(limb);
+    GameManager.world.load_updater(limb);
+
+    // also auto-resize if too small
+    if (limb.sprite.get_width() < 32 && limb.sprite.get_height() < 32)
+        limb.sprite.set_scale(5);
+
+    // select
+    select(limb);
+}
 
 // Initialize Game Components
 actor_builder.game_init = () => {
@@ -57,34 +145,11 @@ actor_builder.game_init = () => {
     UIBuilder.config(AB_UI_OPTS)
     Interact.defer_resets();
     Interact.skip_dead();
-    
-    // (defined in devkit.html)
-    load_limb = (image) => {
-
-        // load image as limb and set in center of view
-        var limb = new Limb(Game, image, true);
-        var ctr = GameManager.world.get_grid_point([Game.get_w()/2, Game.get_h()/2]);
-        limb.sprite.set_center(ctr[0], ctr[1]);
-        limbs.push(limb);
-        GameManager.world.load_updater(limb);
-
-        // select sprite and update properties on right hand side
-        // also auto-resize if too small
-        selected = limb;
-        if (selected.sprite.get_width() < 32 && selected.sprite.get_height() < 32)
-            selected.sprite.set_scale(5);
-        $('#scale-x').val(selected.sprite.get_scalex());
-        $('#scale-y').val(selected.sprite.get_scaley());
-        $('#pos-x').val(selected.sprite.get_x());
-        $('#pos-y').val(selected.sprite.get_y());
-        $('#pivot-x').val(selected.sprite.get_origin()[0]); // don't set origin directly
-        $('#pivot-y').val(selected.sprite.get_origin()[1]); // don't set origin directly
-    }
 
     // show elements
     $('.dk-rnav').show('slow');
 
-    // apply scale, pos, pivot
+    // apply scale, pos, pivot, snap
     $('#scale-x').on('change', () => {
         if (!selected) return;
         var inp = parseFloat($('#scale-x').val());
@@ -101,6 +166,66 @@ actor_builder.game_init = () => {
     $('#pos-y').on('change', () => selected ? selected.sprite.set_y(parseFloat($('#pos-y').val())) : '');
     $('#pivot-x').on('change', () => selected ? selected.sprite.set_origin([parseFloat($('#pivot-x').val()), parseFloat($('#pivot-y').val())]) : ''); // don't set origin directly
     $('#pivot-y').on('change', () => selected ? selected.sprite.set_origin([parseFloat($('#pivot-x').val()), parseFloat($('#pivot-y').val())]) : ''); // don't set origin directly
+    $('#snap-x').on('change', () => {
+        var input = parseFloat($('#snap-x').val());
+        if (input < 0) input = 0; // min snap
+        if (input > 256) input = 256; // max snap
+        $('#snap-x').val(input);
+        snaps[0] = input;
+        reset_grid();
+    });
+    $('#snap-y').on('change', () => {
+        var input = parseFloat($('#snap-y').val());
+        if (input < 0) input = 0; // min snap
+        if (input > 256) input = 256; // max snap
+        $('#snap-y').val(input);
+        snaps[1] = input;
+        reset_grid();
+    });
+    $('#m-b').on('click', () => {
+        mode = 'body';
+        unselect();
+        $('#m-b').addClass('dk-active');
+        $('#m-s').removeClass('dk-active');
+        $('#m-p').removeClass('dk-active');
+        $('#m-c').removeClass('dk-active');
+        $('#m-j').removeClass('dk-active');
+    });
+    $('#m-s').on('click', () => {
+        mode = 'select';
+        $('#m-b').removeClass('dk-active');
+        $('#m-s').addClass('dk-active');
+        $('#m-p').removeClass('dk-active');
+        $('#m-c').removeClass('dk-active');
+        $('#m-j').removeClass('dk-active');
+    });
+    $('#m-p').on('click', () => {
+        mode = 'pivot';
+        unselect();
+        $('#m-b').removeClass('dk-active');
+        $('#m-s').removeClass('dk-active');
+        $('#m-p').addClass('dk-active');
+        $('#m-c').removeClass('dk-active');
+        $('#m-j').removeClass('dk-active');
+    });
+    $('#m-c').on('click', () => {
+        mode = 'connect';
+        unselect();
+        $('#m-b').removeClass('dk-active');
+        $('#m-s').removeClass('dk-active');
+        $('#m-p').removeClass('dk-active');
+        $('#m-c').addClass('dk-active');
+        $('#m-j').removeClass('dk-active');
+    });
+    $('#m-j').on('click', () => {
+        mode = 'joint';
+        unselect();
+        $('#m-b').removeClass('dk-active');
+        $('#m-s').removeClass('dk-active');
+        $('#m-p').removeClass('dk-active');
+        $('#m-c').removeClass('dk-active');
+        $('#m-j').addClass('dk-active');
+    });
 
     // press space to reset grid
     // update drag effect
@@ -125,8 +250,7 @@ actor_builder.game_init = () => {
                 .top()
                 .do((limb,mpos) => {
                     if (selected && selected.sprite.id === limb.sprite.id) {
-                        selected = null;
-                        console.log('Limb unselected!');
+                        unselect();
                         limb.destroy();
                         console.log('Limb destroyed! ID# '+limb.sprite.id);
                     } else {
@@ -140,22 +264,28 @@ actor_builder.game_init = () => {
             Interact.onleftclick(limbs)
                 .top()
                 .do((limb,mpos) => {
-                    selected = limb;
-                    console.log('Limb selected! ID# '+limb.sprite.id);
+                    if (mode == 'select') {
+                        select(limb);
+                    }
                 })
                 .else((mpos) => {
-                    selected = null;
-                    console.log('Limb unselected!');
+                    if (mode == 'select') {
+                        unselect();
+                    }
                 });
 
-            Interact.drag(limbs);
+            if (mode == 'select')
+                Interact.drag(limbs)
+                .while((item,mpos) => {
+                    snap(item);
+                });
 
             Interact.reset();
         }
     });
 
-    // grid
-    var bg = UIBuilder.grid({
+    // grid (default)
+    bg = UIBuilder.grid({
         position : [0,0],
         width : Game.get_w(),
         height : Game.get_h(),

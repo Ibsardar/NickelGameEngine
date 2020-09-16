@@ -71,18 +71,49 @@
     background-color: #202020;
     color: rgb(219, 88, 0);
     font-family: Montserrat, Courier, sans-serif;
+    min-width: 130px;
 }
 
 .dk-light {
     background-color: #ebebeb;
     color: rgb(219, 88, 0);
     font-family: Montserrat, Courier, sans-serif;
+    min-width: 130px;
 }
 
 .dk-btn {
+    background-color: #5e5e5e;
+    color: rgb(219, 88, 0);
+    font-family: Montserrat, Courier, sans-serif;
+    min-width: 130px;
+}
+
+.dk-btn-span {
     background-color: #202020;
     color: rgb(219, 88, 0);
     font-family: Montserrat, Courier, sans-serif;
+    display: inline-block;
+    min-width: 130px;
+    padding: 4px;
+}
+
+.dk-btn-span-2 {
+    background-color: #236b88;
+    color: rgb(255, 255, 255);
+    font-family: Montserrat, Courier, sans-serif;
+    display: inline-block;
+    min-width: 130px;
+    padding: 4px;
+}
+
+.dk-btn-span-3 {
+    background-color: #5cb850;
+    color: rgb(255, 255, 255);
+    font-family: Montserrat, Courier, sans-serif;
+    display: inline-block;
+    min-width: 130px;
+    font-weight: bold;
+    padding: 4px;
 }
 
 .dk-header {
@@ -97,7 +128,7 @@
     overflow: hidden;
     z-index: 2;
     position: sticky;
-    width: 100%;
+    width: 80%;
 }
 
 .dk-normal {
@@ -158,12 +189,13 @@
     height: 100%;
     width: 20%;
     position: fixed;
-    z-index: 1;
-    top: 80px;
+    z-index: 2;
+    top: 0px;
     right: 0;
     background-color: #ebebeb;
     overflow-x: hidden;
     padding: 8px 8px;
+    padding-top: 80px;
 }
 
 .dk-rnav div,span {
@@ -181,4 +213,8 @@
 
 .dk-active {
     background-color: gold;
+}
+
+.dk-copy {
+    float: right;
 }
