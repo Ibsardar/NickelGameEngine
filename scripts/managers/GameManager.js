@@ -114,6 +114,7 @@ class GameManager {
         Skeleton._scene = scene;
         GarbageCollector.init(scene);
         GameManager._gc_timer = new SimpleTimer();
+        if (Nickel.DEBUG) GameManager.init_debugging();
 
         GameManager.max_projectiles_per_group_until_gc = Nickel.DEBUG ? 10 : 100;
         GameManager.max_particles_per_group_until_gc = Nickel.DEBUG ? 100 : 1000;
@@ -359,6 +360,33 @@ class GameManager {
         if (type == 'only') GameManager._update_type = GameManager.WHITELIST;
         else if (type == 'except') GameManager._update_type = GameManager.BLACKLIST;
         else GameManager._update_type = GameManager.UNRESTRICTED;
+    }
+
+    static init_debugging() {
+
+        Nickel.GLOBALS.gm = GameManager;
+        Nickel.GLOBALS.counts = (clear=true) => {
+            if (clear) console.clear();
+            console.log("\
+            Projectile:\n\
+                groups:             " + Projectile.number_of_groups + "\n\
+                count:              " + Projectile.count + "\n\
+                dead:               " + Projectile.dead_count + "\n\
+            ParticleBulletSystem:\n\
+                groups:             " + ParticleBulletSystem.number_of_groups + "\n\
+                count (systems):    " + ParticleBulletSystem.count + "\n\
+                count (particles):  " + ParticleBulletSystem.particle_count + "\n\
+                dead (systems):     " + ParticleBulletSystem.dead_count + "\n\
+            Actor:\n\
+                groups:             " + Actor.number_of_groups + "\n\
+                count:              " + Actor.count + "\n\
+                dead:               " + Actor.dead_count + "\n\
+            World:\n\
+                count:              " + GameManager.world.load.length + "\n\
+            GC:\n\
+                time left:          " + Math.round(GameManager._gc_timer.remaining() / 1000) + "s\n\
+            ");
+        }
     }
 
     /**
