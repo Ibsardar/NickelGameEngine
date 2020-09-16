@@ -46,10 +46,13 @@ class InteractionManager {
     // Note: use carefully externally. May not be accurate unless resetted at the end of each game loop.
     static last_mpos;
 
+    /** Default sort_by function used for all interactive sorting */
+    static default_sort_by = (item) => InteractionManager.sprite_of(item).layer;
+
+    /** Default compare_by function used for all interactive comparing */
+    static default_compare_by = (item) => InteractionManager.sprite_of(item).id;
+
     /// Internal categorical vars
-    /**@todo these SHOULD NOT BE STATIC. Instead, for each function call associated with an interaction
-     *                                   (like onclick or onhover), save the according data for it.
-     */
     
     static _lmb_click_data = {
         pressed : false
@@ -121,10 +124,10 @@ class InteractionManager {
             // trigger event
             if (InteractionManager._drag_data.curr) {
                 InteractionManager.calc_mouse();
-                var saved_spr = InteractionManager._drag_data.curr;
+                var saved_item = InteractionManager._drag_data.curr;
                 var saved_ptr = Nickel.v2d.cp(InteractionManager.last_mpos);
-                chain.end = (f = (spr, ptr) => chain) => {
-                    f(saved_spr, saved_ptr);
+                chain.end = (f = (item, ptr) => chain) => {
+                    f(saved_item, saved_ptr);
                     return chain;
                 }
             }
@@ -137,14 +140,14 @@ class InteractionManager {
         else if (Game.mouse_curr === 0 && InteractionManager._drag_data.curr) {
 
             InteractionManager.calc_mouse();
-            InteractionManager._drag_data.curr.set_pos(
+            InteractionManager.sprite_of(InteractionManager._drag_data.curr).set_pos(
                 InteractionManager.last_mpos[0] - InteractionManager._drag_data.off[0],
                 InteractionManager.last_mpos[1] - InteractionManager._drag_data.off[1]
             );
 
             // trigger event
             var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
-            chain.while = (f = (spr, ptr) => chain) => {
+            chain.while = (f = (item, ptr) => chain) => {
                 f(InteractionManager._drag_data.curr, saved);
                 return chain;
             }
@@ -155,17 +158,17 @@ class InteractionManager {
 
             InteractionManager._drag_data.pressed = true;
             InteractionManager.calc_mouse();
-            var under = InteractionManager.sprite_under_point(items, InteractionManager.last_mpos);
+            var under = InteractionManager.item_under_point(items, InteractionManager.last_mpos);
             if (under) {
                 InteractionManager._drag_data.curr = under;
                 InteractionManager._drag_data.off = [
-                    InteractionManager.last_mpos[0] - under.get_x(),
-                    InteractionManager.last_mpos[1] - under.get_y()
+                    InteractionManager.last_mpos[0] - InteractionManager.sprite_of(under).get_x(),
+                    InteractionManager.last_mpos[1] - InteractionManager.sprite_of(under).get_y()
                 ];
 
                 // trigger event
                 var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
-                chain.start = (f = (spr, ptr) => chain) => {
+                chain.start = (f = (item, ptr) => chain) => {
                     f(InteractionManager._drag_data.curr, saved);
                     return chain;
                 }
@@ -176,6 +179,11 @@ class InteractionManager {
         return chain;
     }
 
+    /**
+     * Can only be used once.
+     * 
+     * @param {[]} items 
+     */
     static onhover(items) {
 
         // allows for chaining event callbacks
@@ -195,11 +203,11 @@ class InteractionManager {
         }
 
         // trigger chain
-        chain.top = (sort_by = (s) => s.id, compare_by = (s) => s.id) => {
+        chain.top = (sort_by = InteractionManager.default_sort_by, compare_by = InteractionManager.default_compare_by) => {
             
             InteractionManager.calc_mouse();
             var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
-            var under = InteractionManager.sprite_under_point(items, InteractionManager.last_mpos, sort_by, false);
+            var under = InteractionManager.item_under_point(items, InteractionManager.last_mpos, sort_by, false);
             if (under) {
                 if (InteractionManager._hover_data.last) {
                     if (compare_by(InteractionManager._hover_data.last) === compare_by(under)) {
@@ -207,7 +215,7 @@ class InteractionManager {
                         // case: if i have already been hovering over the detected item
                     
                         // trigger event
-                        sub_chain.while = (f = (spr,ptr) => sub_chain) => {
+                        sub_chain.while = (f = (item,ptr) => sub_chain) => {
                             f(under,saved);
                             return sub_chain;
                         }
@@ -220,11 +228,11 @@ class InteractionManager {
                         InteractionManager._hover_data.last = under;
 
                         // trigger events
-                        sub_chain.leave = (f = (spr,ptr) => sub_chain) => {
+                        sub_chain.leave = (f = (item,ptr) => sub_chain) => {
                             f(prev,saved);
                             return sub_chain;
                         }
-                        sub_chain.enter = (f = (spr,ptr) => sub_chain) => {
+                        sub_chain.enter = (f = (item,ptr) => sub_chain) => {
                             f(under,saved);
                             return sub_chain;
                         }
@@ -237,7 +245,7 @@ class InteractionManager {
                     InteractionManager._hover_data.last = under;
                     
                     // trigger event
-                    sub_chain.enter = (f = (spr,ptr) => sub_chain) => {
+                    sub_chain.enter = (f = (item,ptr) => sub_chain) => {
                         f(under,saved);
                         return sub_chain;
                     }
@@ -252,7 +260,7 @@ class InteractionManager {
                     InteractionManager._hover_data.last = null;
                     
                     // trigger event
-                    sub_chain.leave = (f = (spr,ptr) => sub_chain) => {
+                    sub_chain.leave = (f = (item,ptr) => sub_chain) => {
                         f(prev,saved);
                         return sub_chain;
                     }
@@ -269,11 +277,11 @@ class InteractionManager {
             }
             return sub_chain;
         }
-        chain.bottom = (sort_by = (s) => s.id, compare_by = (s) => s.id) => {
+        chain.bottom = (sort_by = InteractionManager.default_sort_by, compare_by = InteractionManager.default_compare_by) => {
 
             InteractionManager.calc_mouse();
             var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
-            var under = InteractionManager.sprite_under_point(items, InteractionManager.last_mpos, sort_by, true);
+            var under = InteractionManager.item_under_point(items, InteractionManager.last_mpos, sort_by, true);
             if (under) {
                 if (InteractionManager._hover_data.last) {
                     if (compare_by(InteractionManager._hover_data.last) === compare_by(under)) {
@@ -281,7 +289,7 @@ class InteractionManager {
                         // case: if i have already been hovering over the detected item
                     
                         // trigger event
-                        sub_chain.while = (f = (spr,ptr) => sub_chain) => {
+                        sub_chain.while = (f = (item,ptr) => sub_chain) => {
                             f(under,saved);
                             return sub_chain;
                         }
@@ -294,11 +302,11 @@ class InteractionManager {
                         InteractionManager._hover_data.last = under;
 
                         // trigger events
-                        sub_chain.leave = (f = (spr,ptr) => sub_chain) => {
+                        sub_chain.leave = (f = (item,ptr) => sub_chain) => {
                             f(prev,saved);
                             return sub_chain;
                         }
-                        sub_chain.enter = (f = (spr,ptr) => sub_chain) => {
+                        sub_chain.enter = (f = (item,ptr) => sub_chain) => {
                             f(under,saved);
                             return sub_chain;
                         }
@@ -311,7 +319,7 @@ class InteractionManager {
                     InteractionManager._hover_data.last = under;
                     
                     // trigger event
-                    sub_chain.enter = (f = (spr,ptr) => sub_chain) => {
+                    sub_chain.enter = (f = (item,ptr) => sub_chain) => {
                         f(under,saved);
                         return sub_chain;
                     }
@@ -326,7 +334,7 @@ class InteractionManager {
                     InteractionManager._hover_data.last = null;
                     
                     // trigger event
-                    sub_chain.leave = (f = (spr,ptr) => sub_chain) => {
+                    sub_chain.leave = (f = (item,ptr) => sub_chain) => {
                         f(prev,saved);
                         return sub_chain;
                     }
@@ -343,18 +351,18 @@ class InteractionManager {
             }
             return sub_chain;
         }
-        chain.all = (sort_by = (s) => s.id) => {
+        chain.all = (sort_by = InteractionManager.default_sort_by) => {
 
             InteractionManager.calc_mouse();
             var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
-            var unders = InteractionManager.sprites_under_point(items, InteractionManager.last_mpos, sort_by, false);
+            var unders = InteractionManager.items_under_point(items, InteractionManager.last_mpos, sort_by, false);
             if (unders.length) {
                 if (InteractionManager._hover_data.over_group) {
                         
                     // case: if i have already been hovering over the detected item(s)
                 
                     // trigger event
-                    sub_chain.while = (f = (sprs,ptr) => sub_chain) => {
+                    sub_chain.while = (f = (items,ptr) => sub_chain) => {
                         f(unders,saved);
                         return sub_chain;
                     }
@@ -366,7 +374,7 @@ class InteractionManager {
                     InteractionManager._hover_data.over_group = true;
                     
                     // trigger event
-                    sub_chain.enter = (f = (sprs,ptr) => sub_chain) => {
+                    sub_chain.enter = (f = (items,ptr) => sub_chain) => {
                         f(unders,saved);
                         return sub_chain;
                     }
@@ -380,7 +388,7 @@ class InteractionManager {
                     InteractionManager._hover_data.over_group = false;
                     
                     // trigger event
-                    sub_chain.leave = (f = (sprs,ptr) => sub_chain) => {
+                    sub_chain.leave = (f = (items,ptr) => sub_chain) => {
                         f(unders,saved);
                         return sub_chain;
                     }
@@ -397,18 +405,18 @@ class InteractionManager {
             }
             return sub_chain;
         }
-        chain.all_reversed = (sort_by = (s) => s.id) => {
+        chain.all_reversed = (sort_by = InteractionManager.default_sort_by) => {
 
             InteractionManager.calc_mouse();
             var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
-            var unders = InteractionManager.sprites_under_point(items, InteractionManager.last_mpos, sort_by, true);
+            var unders = InteractionManager.items_under_point(items, InteractionManager.last_mpos, sort_by, true);
             if (unders.length) {
                 if (InteractionManager._hover_data.over_group) {
                         
                     // case: if i have already been hovering over the detected item(s)
                 
                     // trigger event
-                    sub_chain.while = (f = (sprs,ptr) => sub_chain) => {
+                    sub_chain.while = (f = (items,ptr) => sub_chain) => {
                         f(unders,saved);
                         return sub_chain;
                     }
@@ -420,7 +428,7 @@ class InteractionManager {
                     InteractionManager._hover_data.over_group = true;
                     
                     // trigger event
-                    sub_chain.enter = (f = (sprs,ptr) => sub_chain) => {
+                    sub_chain.enter = (f = (items,ptr) => sub_chain) => {
                         f(unders,saved);
                         return sub_chain;
                     }
@@ -434,7 +442,7 @@ class InteractionManager {
                     InteractionManager._hover_data.over_group = false;
                     
                     // trigger event
-                    sub_chain.leave = (f = (sprs,ptr) => sub_chain) => {
+                    sub_chain.leave = (f = (items,ptr) => sub_chain) => {
                         f(unders,saved);
                         return sub_chain;
                     }
@@ -465,6 +473,7 @@ class InteractionManager {
 
     /// Other helpful methods
 
+    /**@todo */
     static update() {
 
         // todo -> encapsulate optimization of mpos calculations (only calc once per update)
@@ -521,14 +530,14 @@ class InteractionManager {
      */
     static auto_resets = () => InteractionManager.deferred_resets = false;
 
-    static sprites_under_point(items=[], pt=[0,0], sort_by = (s) => s.id, reversed=false, only_first=false) {
+    static items_under_point(items=[], pt=[0,0], sort_by = InteractionManager.default_sort_by, reversed=false, only_first=false) {
 
         var heap = new Heap(reversed ? 'min' : 'max');
         for (let item of items) {
             var spr = InteractionManager.sprite_of(item);
             if (InteractionManager.dead_checks && spr.is_dead()) continue; // ignore dead sprites
             if (spr.colliding_with(pt, false))
-                heap.in(spr,sort_by(spr));
+                heap.in(item,sort_by(item));
         }
 
         if (only_first)
@@ -536,9 +545,9 @@ class InteractionManager {
         return heap.sort();
     }
 
-    static sprite_under_point(items=[], pt=[0,0], sort_by = (s) => s.id, reversed=false) {
+    static item_under_point(items=[], pt=[0,0], sort_by = InteractionManager.default_sort_by, reversed=false) {
 
-        return InteractionManager.sprites_under_point(items, pt, sort_by, reversed, true);
+        return InteractionManager.items_under_point(items, pt, sort_by, reversed, true);
     }
 
     static sprite_of(item) {
@@ -581,10 +590,10 @@ class InteractionManager {
      *  1 : middle
      *  2 : right
      * 
-     * @param {Sprites} sprites 
+     * @param {Object} items 
      * @param {Number} mb 
      */
-    static _onclick(sprites, mb=-1) {
+    static _onclick(items, mb=-1) {
 
         // allows for chaining event callbacks
         var chain;
@@ -615,15 +624,15 @@ class InteractionManager {
                 InteractionManager._mb_press(Game.mouse_curr, true);
 
             // trigger chain
-            chain.top = (sort_by = (s) => s.id) => {
+            chain.top = (sort_by = InteractionManager.default_sort_by) => {
 
                 InteractionManager.calc_mouse();
                 var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
-                var under = InteractionManager.sprite_under_point(sprites, InteractionManager.last_mpos, sort_by, false);
+                var under = InteractionManager.item_under_point(items, InteractionManager.last_mpos, sort_by, false);
                 if (under) {
 
                     // trigger event
-                    sub_chain.do = (f = (spr, ptr) => sub_chain) => {
+                    sub_chain.do = (f = (item, ptr) => sub_chain) => {
                         f(under,saved);
                         return sub_chain;
                     }
@@ -637,15 +646,15 @@ class InteractionManager {
                 }
                 return sub_chain;
             }
-            chain.bottom = (sort_by = (s) => s.id) => {
+            chain.bottom = (sort_by = InteractionManager.default_sort_by) => {
 
                 InteractionManager.calc_mouse();
                 var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
-                var under = InteractionManager.sprite_under_point(sprites, InteractionManager.last_mpos, sort_by, true);
+                var under = InteractionManager.item_under_point(items, InteractionManager.last_mpos, sort_by, true);
                 if (under) {
 
                     // trigger event
-                    sub_chain.do = (f = (spr, ptr) => sub_chain) => {
+                    sub_chain.do = (f = (item, ptr) => sub_chain) => {
                         f(under,saved);
                         return sub_chain;
                     }
@@ -659,15 +668,15 @@ class InteractionManager {
                 }
                 return sub_chain;
             }
-            chain.all = (sort_by = (s) => s.id) => {
+            chain.all = (sort_by = InteractionManager.default_sort_by) => {
 
                 InteractionManager.calc_mouse();
                 var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
-                var unders = InteractionManager.sprites_under_point(sprites, InteractionManager.last_mpos, sort_by, false);
+                var unders = InteractionManager.items_under_point(items, InteractionManager.last_mpos, sort_by, false);
                 if (unders.length) {
 
                     // trigger event
-                    sub_chain.do = (f = (sprs, ptr) => sub_chain) => {
+                    sub_chain.do = (f = (items, ptr) => sub_chain) => {
                         f(unders,saved);
                         return sub_chain;
                     }
@@ -681,15 +690,15 @@ class InteractionManager {
                 }
                 return sub_chain;
             }
-            chain.all_reversed = (sort_by = (s) => s.id) => {
+            chain.all_reversed = (sort_by = InteractionManager.default_sort_by) => {
 
                 InteractionManager.calc_mouse();
                 var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
-                var unders = InteractionManager.sprites_under_point(sprites, InteractionManager.last_mpos, sort_by, true);
+                var unders = InteractionManager.items_under_point(items, InteractionManager.last_mpos, sort_by, true);
                 if (unders.length) {
 
                     // trigger event
-                    sub_chain.do = (f = (sprs, ptr) => sub_chain) => {
+                    sub_chain.do = (f = (items, ptr) => sub_chain) => {
                         f(unders,saved);
                         return sub_chain;
                     }

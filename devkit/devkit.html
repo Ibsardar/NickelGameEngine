@@ -47,6 +47,7 @@
     <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet"> <!-- modern -->
     <link href="https://fonts.googleapis.com/css2?family=Medula+One&display=swap" rel="stylesheet"> <!-- narrow-blocky -->
     <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;700&display=swap" rel="stylesheet"> <!-- futuristic -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> <!-- icons -->
     <!-- removes favicon.ico error -->
     <link rel="shortcut icon" href="">
 </head>
@@ -80,11 +81,27 @@
             <span>Pivot: </span>
             <input type='number' id='pivot-x' class='dk-inline' value="" placeholder="x">
             <input type='number' id='pivot-y' class='dk-inline' value="" placeholder="y">
-            <br><br><button type="button">Set Body Mode</button>
-            <br><br><button type="button" class="dk-active">Select Mode</button>
-            <br><br><button type="button">Pivot Mode</button>
-            <br><br><button type="button">Connect Mode</button>
-            <br><br><button type="button">Joint Mode</button>
+            <span>Snap: </span>
+            <input type='number' id='snap-x' class='dk-inline' value=0 placeholder="x" step=1 min=0 max=256>
+            <input type='number' id='snap-y' class='dk-inline' value=0 placeholder="y" step=1 min=0 max=256>
+            <br><br>
+            <button id='m-b' class="dk-btn-span" type="button">Set Body Mode</button>
+            <button id='m-s' class="dk-btn-span" type="button" class="dk-active">Selection Mode</button>
+            <button id='m-p' class="dk-btn-span" type="button">Pivot Mode</button>
+            <button id='m-c' class="dk-btn-span" type="button">Connect Mode</button>
+            <button id='m-j' class="dk-btn-span" type="button">Joint Mode</button>
+            <br><br>
+            <button id='blowup' class="dk-btn-span-2" type="button">Blow Up</button>
+            <button id='comein' class="dk-btn-span-2" type="button">Come Together</button>
+            <br><br>
+            <button id='gen' class="dk-btn-span-3" type="button">Generate</button>
+        </div>
+        <div class="dk-tray" style="font-size:1em">
+            <span class="dk-ctr dk">Output</span>
+            <textarea id='output' rows="2" cols="50" placeholder="Add this text to your IMAGES.json located in <project-name>/scripts/data/ folder..."></textarea>
+            <button type="button" class="dk-copy" onclick='$("#output").select();document.execCommand("copy");'>
+                <i class="fa fa-copy"></i>
+            </button>
         </div>
     </div>
 </body>

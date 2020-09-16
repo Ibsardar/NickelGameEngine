@@ -124,6 +124,7 @@ class UIBuilder {
     
     static text_button(options={}, _defaults={
         scene:UIBuilder.scene,
+        replace:null, // must be null (no-replace) or an object built by UIBuilder
         position:[0,0],
         align:'center',
         size:4, // 1 to 6
@@ -138,6 +139,9 @@ class UIBuilder {
         valign:UIBuilder.valign,
         with_game_loop:false // if true, will continuously reset text position to button position
     }) {
+
+        if (options.replace && !options.replace._uib_world_index && options.replace._uib_world_index !== 0)
+            return console.error('ERROR: UIBuilder>text_button: replacement was not built by the UIBuilder.');
 
         var esize = UIBuilder._resolve_element_size(options.size ?? _defaults.size);
         var tsize = UIBuilder._resolve_text_size(options.text_size ?? _defaults.text_size);
@@ -167,8 +171,6 @@ class UIBuilder {
             esize[1],
             options.position ?? _defaults.position);
         btn.text = lbl;
-        if (UIBuilder.world)
-            btn.mouse_func = (x,y) => UIBuilder.world.get_grid_point([x,y]);
         if (options.with_game_loop) {
             btn.text.center = btn.center;
             btn.update_more = () => {
@@ -179,12 +181,22 @@ class UIBuilder {
             btn.text.center = btn.center;
             btn.update_more = () => btn.text.update();
         }
-        if (UIBuilder.world) UIBuilder.world.load_updater(btn);
+        if (UIBuilder.world) {
+            btn.mouse_func = (x,y) => UIBuilder.world.get_grid_point([x,y]);
+            if (options.replace) {
+                UIBuilder.world.load[options.replace._uib_world_index] = btn;
+                btn._uib_world_index = options.replace._uib_world_index;
+            } else {
+                UIBuilder.world.load_updater(btn);
+                btn._uib_world_index = UIBuilder.world.load.length - 1;
+            }
+        }
         return btn;
     }
 
     static image_button(options={}, _defaults={
         scene:UIBuilder.scene,
+        replace:null, // must be null (no-replace) or an object built by UIBuilder
         position:[0,0],
         align:'center',
         size:4,
@@ -192,6 +204,9 @@ class UIBuilder {
         text:'image-button',
         text_color:UIBuilder.color_primary,
     }) {
+
+        if (options.replace && !options.replace._uib_world_index && options.replace._uib_world_index !== 0)
+            return console.error('ERROR: UIBuilder>image_button: replacement was not built by the UIBuilder.');
 
         var esize = UIBuilder._resolve_element_size(options.size);
         var image = new SimpleImage(
@@ -206,14 +221,22 @@ class UIBuilder {
             esize[0],
             esize[1],
             options.position ?? _defaults.position);
-        if (UIBuilder.world)
+        if (UIBuilder.world) {
             btn.mouse_func = (x,y) => UIBuilder.world.get_grid_point([x,y]);
-        if (UIBuilder.world) UIBuilder.world.load_updater(btn);
+            if (options.replace) {
+                UIBuilder.world.load[options.replace._uib_world_index] = btn;
+                btn._uib_world_index = options.replace._uib_world_index;
+            } else {
+                UIBuilder.world.load_updater(btn);
+                btn._uib_world_index = UIBuilder.world.load.length - 1;
+            }
+        }
         return btn;
     }
 
     static color_button(options={}, _defaults={
         scene:UIBuilder.scene,
+        replace:null, // must be null (no-replace) or an object built by UIBuilder
         position:[0,0],
         align:'center',
         size:4,
@@ -221,6 +244,9 @@ class UIBuilder {
         outline_color:UIBuilder.color_tertiary,
         outline_thickness:UIBuilder.outline_thickness
     }) {
+        
+        if (options.replace && !options.replace._uib_world_index && options.replace._uib_world_index !== 0)
+            return console.error('ERROR: UIBuilder>color_button: replacement was not built by the UIBuilder.');
 
         var esize = UIBuilder._resolve_element_size(options.size ?? _defaults.size);
         var rectangle = new SimpleImage(
@@ -238,14 +264,22 @@ class UIBuilder {
             esize[0],
             esize[1],
             options.position ?? _defaults.position);
-        if (UIBuilder.world)
+        if (UIBuilder.world) {
             btn.mouse_func = (x,y) => UIBuilder.world.get_grid_point([x,y]);
-        if (UIBuilder.world) UIBuilder.world.load_updater(btn);
+            if (options.replace) {
+                UIBuilder.world.load[options.replace._uib_world_index] = btn;
+                btn._uib_world_index = options.replace._uib_world_index;
+            } else {
+                UIBuilder.world.load_updater(btn);
+                btn._uib_world_index = UIBuilder.world.load.length - 1;
+            }
+        }
         return btn;
     }
 
     static label(options={}, _defaults={
         scene:UIBuilder.scene,
+        replace:null, // must be null (no-replace) or an object built by UIBuilder
         position:[0,0],
         text:'label',
         align:'center',
@@ -255,6 +289,8 @@ class UIBuilder {
         weight:UIBuilder.weight,
         valign:UIBuilder.valign
     }) {
+        if (options.replace && !options.replace._uib_world_index && options.replace._uib_world_index !== 0)
+            return console.error('ERROR: UIBuilder>label: replacement was not built by the UIBuilder.');
 
         var tsize = UIBuilder._resolve_text_size(options.text_size ?? _defaults.text_size);
         var lbl = new SimpleText(
@@ -267,12 +303,21 @@ class UIBuilder {
             options.align ?? _defaults.align,
             options.weight ?? _defaults.weight,
             options.valign ?? _defaults.valign);
-        if (UIBuilder.world) UIBuilder.world.load_updater(lbl);
+        if (UIBuilder.world) {
+            if (options.replace) {
+                UIBuilder.world.load[options.replace._uib_world_index] = lbl;
+                lbl._uib_world_index = options.replace._uib_world_index;
+            } else {
+                UIBuilder.world.load_updater(lbl);
+                lbl._uib_world_index = UIBuilder.world.load.length - 1;
+            }
+        }
         return lbl;
     }
 
     static grid(options={}, _defaults={
         scene:UIBuilder.scene,
+        replace:null, // must be null (no-replace) or an object built by UIBuilder
         rows:10,
         cols:20,
         position:[0,0],
@@ -285,6 +330,9 @@ class UIBuilder {
         border_thickness:UIBuilder.outline_thickness,
         image:{img:null, w:0, h:0}
     }) {
+
+        if (options.replace && !options.replace._uib_world_index && options.replace._uib_world_index !== 0)
+            return console.error('ERROR: UIBuilder>grid: replacement was not built by the UIBuilder.');
 
         var img_or_not = options.image_data ? (options.image.img ? options.image : null) : null;
         var bg = new SimpleImage(
@@ -326,7 +374,15 @@ class UIBuilder {
             line.stroke_width = options.grid_thickness ?? _defaults.grid_thickness;
             bg.lines.push(line);
         }
-        if (UIBuilder.world) UIBuilder.world.load_updater(bg);
+        if (UIBuilder.world) {
+            if (options.replace) {
+                UIBuilder.world.load[options.replace._uib_world_index] = bg;
+                bg._uib_world_index = options.replace._uib_world_index;
+            } else {
+                UIBuilder.world.load_updater(bg);
+                bg._uib_world_index = UIBuilder.world.load.length - 1;
+            }
+        }
         return bg;
     }
 }//end UIBuilder
