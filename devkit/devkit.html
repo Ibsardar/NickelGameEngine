@@ -73,17 +73,18 @@
             <input class='dk-inline' value="0" disabled>
             <input class='dk-inline' value="0" disabled>
             <span>Scale: </span>
-            <input type='number' id='scale-x' class='dk-inline' value="" placeholder="x">
-            <input type='number' id='scale-y' class='dk-inline' value="" placeholder="y">
+            <input type='number' id='scale-x' class='dk-inline' value="" placeholder="x" min=0 max=99999.000>
+            <input type='number' id='scale-y' class='dk-inline' value="" placeholder="y" min=0 max=99999.000>
             <span>Position: </span>
-            <input type='number' id='pos-x' class='dk-inline' value="" placeholder="x">
-            <input type='number' id='pos-y' class='dk-inline' value="" placeholder="y">
+            <input type='number' id='pos-x' class='dk-inline' value="" placeholder="x" min=-99999.00 max=99999.00>
+            <input type='number' id='pos-y' class='dk-inline' value="" placeholder="y" min=-99999.00 max=99999.00>
+            <input type='number' id='pos-z' class='dk-inline' value="" placeholder="z (layer)" min=-99 max=99>
             <span>Pivot: </span>
-            <input type='number' id='pivot-x' class='dk-inline' value="" placeholder="x">
-            <input type='number' id='pivot-y' class='dk-inline' value="" placeholder="y">
+            <input type='number' id='pivot-x' class='dk-inline' value="" placeholder="x" min=-99999.00 max=99999.00>
+            <input type='number' id='pivot-y' class='dk-inline' value="" placeholder="y" min=-99999.00 max=99999.00>
             <span>Snap: </span>
-            <input type='number' id='snap-x' class='dk-inline' value=0 placeholder="x" step=1 min=0 max=256>
-            <input type='number' id='snap-y' class='dk-inline' value=0 placeholder="y" step=1 min=0 max=256>
+            <input type='number' id='snap-x' class='dk-inline' value=0 placeholder="x" min=0 max=256>
+            <input type='number' id='snap-y' class='dk-inline' value=0 placeholder="y" min=0 max=256>
             <br><br>
             <button id='m-b' class="dk-btn-span" type="button">Set Body Mode</button>
             <button id='m-s' class="dk-btn-span" type="button" class="dk-active">Selection Mode</button>

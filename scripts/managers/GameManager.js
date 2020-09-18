@@ -30,6 +30,7 @@ import { Actor } from "../Actor.js";
 import { Game } from "../game.js";
 import { Hazard } from "../misc/Hazard.js";
 import { GarbageCollector } from "./GarbageCollector.js";
+import { InteractionManager } from "./InteractionManager.js";
 
 export { GameManager, GameManager as GaMa }; // also export an alias
 
@@ -75,7 +76,10 @@ class GameManager {
     /** list of groups to be updated */
     static active_group_name_list = []; // NOT USED
 
-    /** Determines max wait time (ms) for gc to wait for any gc operation until it is triggered */
+    /** @todo make setter that also sets the internal timer
+     * 
+     * Determines max wait time (ms) for gc to wait for any gc operation until it is triggered
+     **/
     static max_gc_wait_time;
 
     /** Condition function which triggers a custom garbage collection */
@@ -102,6 +106,14 @@ class GameManager {
     // Garbage collection timer
     static _gc_timer;
 
+    /** format: [
+     *      {classref:<Class>, condition:()=>{}, timely:bool, gc_rid:#, im_rid:#},
+     *      {classref:<Class>, condition:()=>{}, timely:bool, gc_rid:#, im_rid:#},
+     *      ...etc
+     *  ]
+     */
+    static _class_data = [];
+
     /**
      * Sets the scene.
      * Sets flags to default values.
@@ -121,7 +133,7 @@ class GameManager {
         GameManager.max_actors_per_group_until_gc = Nickel.DEBUG ? 5 : 50;
         GameManager.max_world_objects_until_gc = Nickel.DEBUG ? 25 : 250;
         GameManager.trigger_delete_events_flag = Nickel.DEBUG ? true : false;
-        GameManager.max_gc_wait_time = Nickel.DEBUG ? 60000 : 300000; // 60s or 5min
+        GameManager.max_gc_wait_time = Nickel.DEBUG ? 10000 : 300000; // 60s or 5min
 
         GameManager._gc_timer.set_alarm(GameManager.max_gc_wait_time);
         GameManager._gc_timer.on_alarm(() => {
@@ -130,6 +142,12 @@ class GameManager {
             if (GameManager.continuous_custom_gc_enabled) {
                 if (Nickel.DEBUG) console.log("Also collecting all custom garbage.");
                 GarbageCollector.custom(GameManager.custom_gc_garbage_filter, GameManager.custom_gc_lists); // collect custom
+            }
+            for (let registrant of GameManager._class_data) {
+                if (registrant.timely) {
+                    if (Nickel.DEBUG) console.log('Also collecting all of the '+registrant.classref.name+' registrant\'s garbage.');
+                    GarbageCollector.collect(registrant.classref, GameManager.trigger_delete_events_flag, registrant.lists); // collect registered
+                }
             }
             GameManager._gc_timer.restart();
         });
@@ -252,6 +270,14 @@ class GameManager {
             GameManager._gc_timer.restart();
         }
 
+        for (let registrant of GameManager._class_data) {
+            if (registrant.condition()) {
+                if (Nickel.DEBUG) console.log('Registered garbage collection triggered. GC timer restarted.');
+                GarbageCollector.collect(registrant.classref, GameManager.trigger_delete_events_flag, registrant.lists); // collect registered
+                GameManager._gc_timer.restart();
+            }
+        }
+
         GameManager._gc_timer.update();
     }
 
@@ -290,6 +316,64 @@ class GameManager {
         GameManager.custom_gc_garbage_filter = (item) => {};
         GameManager.custom_gc_lists = [];
         GameManager.continuous_custom_gc_enabled = false;
+        GameManager.deregister();
+    }
+
+    /**
+     * Registers a new Class to GameManager as well as other managers.
+     * 
+     * @param {{
+            classref: Class,
+            is_dead: (instance_of_classref) => true|false,
+            gc_condition: () => true|false,
+            collect_from: Array[],
+            timely: true|false,
+            path_to_sprite: ['attribute','path','to','sprite']
+     * }} options
+     * @returns registration_id (used as a parameter in the deregister function)
+     */
+    static register(options) {
+
+        if (!options.classref)
+            return console.error('ERROR: GameManager>register: options must include a Class for classref.'); // doesn't return anything
+    
+        if (!options.is_dead)
+            return console.error('ERROR: GameManager>register: options must include a function for is_dead.'); // doesn't return anything
+        
+        return GameManager._class_data.push({
+            classref: options.classref,
+            condition: options.gc_condition ?? function(){},
+            timely: options.timely ?? false,
+            gc_rid: GarbageCollector.register(
+                options.classref,
+                options.is_dead,
+                ...(options.collect_from ?? [])),
+            im_rid: InteractionManager.register(
+                options.classref,
+                options.path_to_sprite ?? []
+            )
+        }) - 1;
+    }
+
+    /**
+     * Deregisters an existing custom added Class so it is not registered with any manager anymore.
+     * If no ID is given, deregister all custom added Classes.
+     * 
+     * ***Note: When no ID is given, also deregisters other managers completely.***
+     * 
+     * @param {Number} registration_id ID returned from register function
+     */
+    static deregister(registration_id=null) {
+
+        if (registration_id === null) {
+            InteractionManager.deregister();
+            GarbageCollector.deregister();
+            GameManager._class_data = [];
+        } else {
+            InteractionManager.deregister(GameManager._class_data[registration_id].im_rid);
+            GarbageCollector.deregister(GameManager._class_data[registration_id].gc_rid);
+            GameManager._class_data.splice(registration_id, 1);
+        }
     }
 
     /**

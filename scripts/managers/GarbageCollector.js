@@ -39,6 +39,14 @@ class GarbageCollector {
     // Viewport of the game
     static scene;
 
+    /** format: [
+     *      {classref:<Class>, filter:()=>{}, lists:[[],[],...etc]},
+     *      {classref:<Class>, filter:()=>{}, lists:[[],[],...etc]},
+     *      ...etc
+     *  ]
+     */
+    static _class_data = [];
+
     /**
      * Sets the scene.
      * Sets flags to default values.
@@ -48,7 +56,6 @@ class GarbageCollector {
     static init(scene) {
 
         GarbageCollector.scene = scene;
-        Skeleton._scene = scene;
     }
 
     /**
@@ -89,8 +96,47 @@ class GarbageCollector {
                 GarbageCollector._gc_sprite(...args);
                 break;
             default:
+                for (let d of GarbageCollector._class_data)
+                    if (classref === d.classref)
+                        return GarbageCollector.custom(d.filter, d.lists); // doesn't return anything...
                 console.error('ERROR: GarbageCollector>collect: class reference '+classref+'not found.');
         }
+    }
+
+    /**
+     * Registers a new Class to be detected for garbage collection.
+     * 
+     * @param {Class} classref 
+     * @param {(instance_of_classref) => true|false} is_dead
+     * @param {...any} collect_from_lists
+     * @returns registration_id (used as a parameter in the deregister function)
+     */
+    static register(classref, is_dead, ...collect_from_lists) {
+
+        var filter = (o) => {
+            if (o instanceof classref && is_dead(o)) return false;
+            else return true;
+        }
+
+        return GarbageCollector._class_data.push({
+            classref: classref,
+            filter: filter,
+            lists: collect_from_lists
+        }) - 1;
+    }
+
+    /**
+     * Deregisters an existing custom added Class so it is not detected as garbage anymore.
+     * If no ID is given, deregister all custom added Classes.
+     * 
+     * @param {Number} registration_id ID returned from register function
+     */
+    static deregister(registration_id=null) {
+
+        if (registration_id === null)
+            GarbageCollector._class_data = [];
+        else
+            GarbageCollector._class_data.splice(registration_id, 1);
     }
 
     /**

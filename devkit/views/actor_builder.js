@@ -30,6 +30,7 @@ import { View } from '../../scripts/View.js';
 import { UIBuilder } from '../../scripts/builders/UIBuilder.js';
 import { Limb } from '../../scripts/Limb.js';
 import { Interact } from '../../scripts/managers/InteractionManager.js';
+import { EditorItem } from '../scripts/EditorItem.js';
 
 export { actor_builder }
 
@@ -50,6 +51,7 @@ var select = (item) => {
     $('#scale-y').val(selected.sprite.get_scaley());
     $('#pos-x').val(selected.sprite.get_x());
     $('#pos-y').val(selected.sprite.get_y());
+    $('#pos-z').val(selected.sprite.get_layer());
     $('#pivot-x').val(selected.sprite.get_origin()[0]); // don't set origin directly
     $('#pivot-y').val(selected.sprite.get_origin()[1]); // don't set origin directly
     console.log('Item selected! Sprite-ID# '+selected.sprite.id);
@@ -62,6 +64,7 @@ var unselect = () => {
     $('#scale-y').val('');
     $('#pos-x').val('');
     $('#pos-y').val('');
+    $('#pos-z').val('');
     $('#pivot-x').val('');
     $('#pivot-y').val('');
     console.log('Item unselected!');
@@ -113,17 +116,18 @@ load_limb = (image) => {
 
     // load image as limb and set in center of view
     var limb = new Limb(Game, image, true);
+    var item = new EditorItem(limb, 'destroy');
     var ctr = GameManager.world.get_grid_point([Game.get_w()/2, Game.get_h()/2]);
-    limb.sprite.set_center(ctr[0], ctr[1]);
-    limbs.push(limb);
-    GameManager.world.load_updater(limb);
+    item.sprite.set_center(ctr[0], ctr[1]);
+    limbs.push(item);
+    GameManager.world.load_updater(item);
 
     // also auto-resize if too small
-    if (limb.sprite.get_width() < 32 && limb.sprite.get_height() < 32)
-        limb.sprite.set_scale(5);
+    if (item.sprite.get_width() < 32 && item.sprite.get_height() < 32)
+        item.sprite.set_scale(5);
 
     // select
-    select(limb);
+    select(item);
 }
 
 // Initialize Game Components
@@ -131,18 +135,22 @@ actor_builder.game_init = () => {
 
     // setup
     Nickel.DEBUG = true;
-    Nickel.VERBOSE = false;
+    Nickel.VERBOSE = true;
     Game.set_bg_color("#adadad");
     Game.set_fps(120);
     GameManager.reset();
     GameManager.init(Game);
     GameManager.world = new Grid(GRID_OPTS);
     GameManager.set_groups(['game'], 'only');
-    GameManager.set_timed_custom_gc(
-        (item) => !((item instanceof Limb) && (!item.sprite || item.sprite.is_dead())),
-        limbs
-    );
-    UIBuilder.config(AB_UI_OPTS)
+    GameManager.register({
+        classref: EditorItem, // need for gc, need for interact-mngr
+        is_dead: (o) => !o.sprite || o.sprite.is_dead(), // need for gc
+        gc_condition: () => {}, // optional for gc
+        collect_from: [limbs], // optional for gc
+        timely: true, // optional for gc
+        path_to_sprite: ['sprite'] // need for interact-mngr
+    });
+    UIBuilder.config(AB_UI_OPTS);
     Interact.defer_resets();
     Interact.skip_dead();
 
@@ -164,6 +172,7 @@ actor_builder.game_init = () => {
     });
     $('#pos-x').on('change', () => selected ? selected.sprite.set_x(parseFloat($('#pos-x').val())) : '');
     $('#pos-y').on('change', () => selected ? selected.sprite.set_y(parseFloat($('#pos-y').val())) : '');
+    $('#pos-z').on('change', () => selected ? selected.sprite.set_layer(parseInt($('#pos-z').val())) : '');
     $('#pivot-x').on('change', () => selected ? selected.sprite.set_origin([parseFloat($('#pivot-x').val()), parseFloat($('#pivot-y').val())]) : ''); // don't set origin directly
     $('#pivot-y').on('change', () => selected ? selected.sprite.set_origin([parseFloat($('#pivot-x').val()), parseFloat($('#pivot-y').val())]) : ''); // don't set origin directly
     $('#snap-x').on('change', () => {
@@ -239,6 +248,7 @@ actor_builder.game_init = () => {
                 $('#scale-y').val(selected ? selected.sprite.get_scaley() : '');
                 $('#pos-x').val(selected ? selected.sprite.get_x() : '');
                 $('#pos-y').val(selected ? selected.sprite.get_y() : '');
+                $('#pos-z').val(selected ? selected.sprite.get_layer() : '');
                 $('#pivot-x').val(selected ? selected.sprite.get_origin()[0] : '');
                 $('#pivot-y').val(selected ? selected.sprite.get_origin()[1] : '');
             }
@@ -306,9 +316,9 @@ actor_builder.game_init = () => {
         align : 'left',
         position : [100,100],
     });
-    main_menu_btn.on_hover = () =>   { main_menu_btn.image.color = 'yellow'; }
-    main_menu_btn.on_leave = () =>   { main_menu_btn.image.color = UIBuilder.color_secondary; }
-    main_menu_btn.on_click = () =>   { main_menu_btn.image.color = 'orange'; }
+    main_menu_btn.on_hover   = () => { main_menu_btn.image.color = 'yellow'; }
+    main_menu_btn.on_leave   = () => { main_menu_btn.image.color = UIBuilder.color_secondary; }
+    main_menu_btn.on_click   = () => { main_menu_btn.image.color = 'orange'; }
     main_menu_btn.on_release = () => {
         GameManager.destroy_all();
         View.previous(actor_builder).init();

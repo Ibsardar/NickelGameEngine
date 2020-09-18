@@ -1180,6 +1180,7 @@ var GridBuilder = {
 
         // storage (holds sprites to be updated with the grid)
         grid.load = [];
+        // HERE 9-18-2020 : creat an alternate load method, "sorted_load" sub-catagorized by classref.name. This will be sorted by a sort function (so for Sprite, it could be sort_by=(s)=>s.get_layer())
 
         // holds list of control functions
         grid.controls = [];

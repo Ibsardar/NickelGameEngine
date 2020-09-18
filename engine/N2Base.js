@@ -44,7 +44,7 @@ __nhelpers = {
     get_blur_rgb_image : function(i, r=6) { var c=document.createElement('canvas'); c.width=i.w; c.height=i.h; var t=new Image(i.w,i.h); t.src=i.img; c.getContext('2d').drawImage(t,0,0); StackBlur.canvasRGB(c,0,0,i.w,i.h,r); return {w:i.w,h:i.h,img:c.toDataURL()}; },
     get_blur_rgba_image : function(i, r=6) { var c=document.createElement('canvas'); c.width=i.w; c.height=i.h; var t=new Image(i.w,i.h); t.src=i.img; c.getContext('2d').drawImage(t,0,0); StackBlur.canvasRGBA(c,0,0,i.w,i.h,r); return {w:i.w,h:i.h,img:c.toDataURL()}; },
     init_globals : function(...gs) { var o = {}; for (s of gs) o[s] = null; Nickel.GLOBALS = {...Nickel.GLOBALS, ...o}; },
-    get_sub_prop : (struct, o, i=0) => struct[i] ? __nhelpers(struct, o[struct[i]], ++i) : o[struct[i]] !== undefined ? o[struct[i]] : o
+    get_sub_prop : (struct=[], o={}, i=0) => struct[i] ? Nickel.util.subprop(struct, o[struct[i]], ++i) : o[struct[i]] !== undefined ? o[struct[i]] : o
 }
 var Nickel = {
 
