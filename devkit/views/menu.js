@@ -94,6 +94,7 @@ menu.game_init = () => {
 
     // for testing...
     Nickel.GLOBALS.gm = GameManager;
+    Nickel.GLOBALS.ren = GameManager.world.renderer;
     Nickel.GLOBALS.counts = (clear=true) => {
         if (clear) console.clear();
         console.log("\

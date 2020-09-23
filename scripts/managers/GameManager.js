@@ -133,7 +133,7 @@ class GameManager {
         GameManager.max_actors_per_group_until_gc = Nickel.DEBUG ? 5 : 50;
         GameManager.max_world_objects_until_gc = Nickel.DEBUG ? 25 : 250;
         GameManager.trigger_delete_events_flag = Nickel.DEBUG ? true : false;
-        GameManager.max_gc_wait_time = Nickel.DEBUG ? 10000 : 300000; // 60s or 5min
+        GameManager.max_gc_wait_time = Nickel.DEBUG ? 60000 : 300000; // 60s or 5min
 
         GameManager._gc_timer.set_alarm(GameManager.max_gc_wait_time);
         GameManager._gc_timer.on_alarm(() => {
@@ -258,7 +258,8 @@ class GameManager {
             GameManager._gc_timer.restart();
         }
 
-        if (GameManager._world.load.length > GameManager.max_world_objects_until_gc) {
+        if (GameManager._world.load.length > GameManager.max_world_objects_until_gc ||
+            (GameManager._world.has_render_stack() && GameManager._world.renderer.obj.count() > GameManager.max_world_objects_until_gc)) { /**@todo implement renderer.obj.count */
             if (Nickel.DEBUG) console.log('World garbage collection triggered. GC timer restarted.');
             GarbageCollector.collect(null, GameManager.trigger_delete_events_flag); // collect all
             GameManager._gc_timer.restart();

@@ -1122,6 +1122,7 @@ var GridBuilder = {
         grid.sdata = grid_data.zoom_data;
         grid.limits_orig = grid_data.limit_data;
         grid.ndata = grid_data.navmesh_data;
+        grid.ddata = grid_data.renderer_enabled; // new addition (boolean)
 
         // copy limits
         if (grid.limits_orig)
@@ -1180,7 +1181,6 @@ var GridBuilder = {
 
         // storage (holds sprites to be updated with the grid)
         grid.load = [];
-        // HERE 9-18-2020 : creat an alternate load method, "sorted_load" sub-catagorized by classref.name. This will be sorted by a sort function (so for Sprite, it could be sort_by=(s)=>s.get_layer())
 
         // holds list of control functions
         grid.controls = [];
@@ -1310,6 +1310,10 @@ var GridBuilder = {
             ang : 0         // rotation (degs)
         }}
 
+        // updates render stack (built seperately, empty by default)
+        grid.render_update = () => {};
+        grid.has_render_stack = () => false;
+
         // Efficient Transformation Algorithm:
         // - save current canvas to 'pre_grid_canvas'
         // - clear current canvas
@@ -1336,6 +1340,9 @@ var GridBuilder = {
                     grid.map[x][y].update();
                 }
             }
+
+            // render stack (does nothing by default)
+            grid.render_update();
 
             // loaded sprites/updaters
             for (var i in grid.load) {
@@ -1437,6 +1444,7 @@ var GridBuilder = {
         if (grid.sdata) GridBuilder.build_scaler(grid);
         if (grid.limits) GridBuilder.build_limiter(grid);
         if (grid.ndata) GridBuilder.build_navmesh(grid);
+        if (grid.ddata) GridBuilder.build_render_stack(grid);
     }
 
     ,
@@ -1769,6 +1777,167 @@ var GridBuilder = {
         grid.nav = NavBuilder.create_navmesh(grid, grid.ndata);
     }
 
+    ,
+
+    build_render_stack : function(grid) {
+
+        // priority queue of priority queues of lists of objects
+        // format:
+        //   "stack"            PQ: <
+        //   "step"                  layer~PQ: <
+        //   "load"                      sub-layer~[obj,obj,...],
+        //   "load"                      sub-layer~[...],
+        //                               ...
+        //                           >,
+        //   "step"                  layer~PQ: <...>,
+        //                           ...
+        //                       >
+        grid.render_stack = new PriorityQueue();
+
+        // enable
+        grid.has_render_stack = () => true;
+        grid.render_update = () => {
+            if (grid.has_render_stack)
+                grid.renderer.stack.update();
+        };
+
+        /**@todo test */
+        // define structure
+        rs = grid.render_stack;
+        grid.renderer = {
+            on : () => grid.has_render_stack = true,
+            off : () => grid.has_render_stack = false,
+            stack : {
+                count : () => rs ? 1 : 0,
+                get : () => rs,
+                data : () => rs.data(),
+                dump : () => rs.dump(),
+                update : () => rs.each((step) => step.each((load) => load.forEach(obj => obj.update()))),
+                clear : () => rs.clear()
+            },
+            step : {
+                count : () => rs.count(),
+                get : (priority=null) => priority === null ? rs.data() : rs.at(priority),
+                data : (priority=null) => {
+                    var data = [];
+                    priority === null ?
+                        rs.each((step) => data = [...data, ...step.data()]) :
+                        rs.each_at(priority, (step) => data = [...data, ...step.data()])
+                    return data;
+                },
+                dump : (priority=null) => {
+                    var dump = [];
+                    priority === null ?
+                        rs.each((step) => dump = [...dump, ...step.dump()]) :
+                        rs.each_at(priority, (step) => dump = [...dump, ...step.dump()]);
+                    return dump;
+                },
+                update : (priority) => rs.each_at(priority, (step) => step.each((load) => load.forEach(obj => obj.update()))),
+                clear : (priority) => rs.each_at(priority, (step) => step.clear()),
+                add : (priority, sort_by = (a,b) => a > b) => rs.in(new PriorityQueue(sort_by), priority),
+            },
+            layer : {
+                count : (priority) => {
+                    var cnt = 0;
+                    rs.each_at(priority, (step) => cnt += step.count());
+                    return cnt;
+                },
+                total : () => {
+                    var cnt = 0;
+                    rs.each((step) => cnt += step.count());
+                    return cnt;
+                },
+                get : (priority=null, layer=null) => {
+                    var loads = [];
+                    if (priority === null && layer === null)
+                        rs.each((step) => step.each((load) => loads.push(load)));
+                    else if (priority === null)
+                        rs.each((step) => step.each_at(layer, (load) => loads.push(load)));
+                    else if (layer === null)
+                        rs.each_at(priority, (step) => step.each((load) => loads.push(load)));
+                    else
+                        rs.each_at(priority, (step) => step.each_at(layer, (load) => loads.push(load)));
+                    return loads;
+                },
+                update : (priority, layer) => rs.each_at(priority, (step) => step.each_at(layer, (load) => load.forEach(obj => obj.update()))),
+                clear : (priority, layer) => rs.each_at(priority, (step) => step.each_at(layer, (load) => load.length = 0)),
+                add : (priority, layer) => rs.first_at(priority, (step) => step.in([], layer))
+            },
+            obj : {
+                count : (priority, layer) => {
+                    var cnt = 0;
+                    rs.each_at(priority, (step) => step.each_at(layer, (load) => cnt += load.length));
+                    return cnt;
+                },
+                count2 : (priority) => {
+                    var cnt = 0;
+                    rs.each_at(priority, (step) => step.each((load) => cnt += load.length));
+                    return cnt;
+                },
+                total : () => {
+                    var cnt = 0;
+                    rs.each((step) => step.each((load) => cnt += load.length));
+                    return cnt;
+                },
+                get : (priority=null, layer=null) => {
+                    var loads = [];
+                    if (priority === null && layer === null)
+                        rs.each((step) => step.each((load) => loads = [...loads, ...load]));
+                    else if (priority === null)
+                        rs.each((step) => step.each_at(layer, (load) => loads = [...loads, ...load]));
+                    else if (layer === null)
+                        rs.each_at(priority, (step) => step.each((load) => loads = [...loads, ...load]));
+                    else
+                        rs.each_at(priority, (step) => step.each_at(layer, (load) => loads = [...loads, ...load]));
+                    return loads;
+                },
+                update : (priority, layer, index) => rs.each_at(priority, (step) => step.each_at(layer, (load) => load[index].update())),
+                rem : (priority, layer, obj, compare = (a,b) => a.id === b.id) => {
+                    var removed = null;
+                    rs.each_at(priority, (step) => step.each_at(layer, (load) => {
+                        for (var i in load)
+                            if (compare(obj,load[i])) {
+                                removed = load.splice(i,1)[0];
+                                break;
+                            }
+                    }, () => removed), () => removed) // <-- breaks when removed is truthy
+                    return removed;
+                },
+                rem2 : (priority, layer, index) => {
+                    var removed = null;
+                    rs.each_at(priority, (step) => step.each_at(layer, (load) => {
+                        for (var i in load)
+                            if (index === i) {
+                                removed = load.splice(i,1)[0];
+                                break;
+                            }
+                    }, () => removed), () => removed) // <-- breaks when removed is truthy
+                    return removed;
+                },
+                add : (priority, layer, obj) => rs.first_at(priority, (step) => step.first_at(layer, (load) => load.push(obj))),
+                change : (priority, from_layer, to_layer, obj, compare = (a,b) => a.id === b.id) => {
+                    grid.renderer.obj.rem(priority, from_layer, obj, compare) ?
+                        grid.renderer.obj.add(priority, to_layer, obj) :
+                        false; // <-- obj is not in from_layer (don't add it to to_layer)
+                },
+                audit : (priority, layer, obj, compare = (a,b) => a.id === b.id) => {
+                    var found = 0;
+                    rs.each_at(priority, (step) => step.each_at(layer, (load) => load.forEach((o) => compare(obj,o) ? found++ : null)));
+                    return found;
+                },
+                audit2 : (priority, obj, compare = (a,b) => a.id === b.id) => {
+                    var found = 0;
+                    rs.each_at(priority, (step) => step.each((load) => load.forEach((o) => compare(obj,o) ? found++ : null)));
+                    return found;
+                },
+                audit3 : (obj, compare = (a,b) => a.id === b.id) => {
+                    var found = 0;
+                    rs.each(priority, (step) => step.each((load) => load.forEach((o) => compare(obj,o) ? found++ : null)));
+                    return found;
+                }
+            }
+        }
+    }
 }//end grid builder
 
 

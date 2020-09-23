@@ -150,8 +150,14 @@ class GarbageCollector {
     static custom(garbage_filter = (item) => {}, ...lists) {
 
         // remove from world
-        if (GameManager.world)
+        if (GameManager.world) {
             GameManager.world.load = GameManager.world.load.filter(garbage_filter);
+
+            // remove from world's render stack
+            if (GameManager.world.has_render_stack()) {
+                /**@todo */
+            }
+        }
 
         // remove from each list
         for (let list of lists)
@@ -168,7 +174,7 @@ class GarbageCollector {
                 )
             );
 
-        Actor.delete_destroyed(trigger_delete_events);
+        Actor.delete_destroyed(trigger_delete_events); /**@todo make optional deferred update for use with the world's render stack */
     }
 
     static _gc_projectile(trigger_delete_events=false, ...lists) {
@@ -181,7 +187,7 @@ class GarbageCollector {
                 )
             );
 
-        Projectile.delete_destroyed(trigger_delete_events);
+        Projectile.delete_destroyed(trigger_delete_events); /**@todo make optional deferred update for use with the world's render stack */
     }
 
     static _gc_pbs(trigger_delete_events=false, ...lists) {
@@ -195,7 +201,7 @@ class GarbageCollector {
                 )
             );
 
-        ParticleBulletSystem.delete_destroyed(trigger_delete_events);
+        ParticleBulletSystem.delete_destroyed(trigger_delete_events); /**@todo make optional deferred update for use with the world's render stack */
     }
 
     static _gc_hazard(...lists) {
@@ -208,18 +214,24 @@ class GarbageCollector {
                 )
             );
 
-        Hazard.delete_destroyed();
+        Hazard.delete_destroyed(); /**@todo make optional deferred update for use with the world's render stack */
     }
 
     static _gc_locomotive(...lists) {
         
         // remove from world
-        if (GameManager.world)
+        if (GameManager.world) {
             GameManager.world.load = GameManager.world.load.filter(
                 item => item && (
                     (item instanceof Locomotive && !item.dead) || !(item instanceof Locomotive)
                 )
             );
+
+            // remove from world's render stack
+            if (GameManager.world.has_render_stack()) {
+                /**@todo */
+            }
+        }
 
         // remove from each list
         for (let list of lists)
@@ -233,12 +245,18 @@ class GarbageCollector {
     static _gc_sprite(...lists) {
 
         // remove from world
-        if (GameManager.world)
+        if (GameManager.world) {
             GameManager.world.load = GameManager.world.load.filter(
                 item => item && (
                     (item instanceof Sprite && !item.dead) || !(item instanceof Sprite)
                 )
             );
+
+            // remove from world's render stack
+            if (GameManager.world.has_render_stack()) {
+                /**@todo */
+            }
+        }
 
         // remove from each list
         for (let list of lists)
@@ -252,13 +270,19 @@ class GarbageCollector {
     static _gc_sprite_and_locomotive(...lists) {
 
         // remove from world
-        if (GameManager.world)
+        if (GameManager.world) {
             GameManager.world.load = GameManager.world.load.filter(
                 item => item && (
                     ((item instanceof Sprite && !item.dead) || !(item instanceof Sprite)) ||
                     ((item instanceof Locomotive && !item.dead) || !(item instanceof Locomotive))
                 )
             );
+
+            // remove from world's render stack
+            if (GameManager.world.has_render_stack()) {
+                /**@todo */
+            }
+        }
 
         // remove from each list
         for (let list of lists)

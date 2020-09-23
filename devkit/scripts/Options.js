@@ -106,7 +106,8 @@ var GRID_OPTS = {
     rotation_data       : grid_rot,
     zoom_data           : grid_zoom,
     limit_data          : grid_lims,
-    navmesh_data        : grid_nav
+    navmesh_data        : grid_nav,
+    renderer_enabled    : true // new addition
 }
 
 //all of these are used in FIRE_OPTS

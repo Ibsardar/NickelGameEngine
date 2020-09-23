@@ -8151,6 +8151,16 @@ function Heap(_type='max') {
         return objects;
     }
 
+    this.get_sort = function() {
+        //--    gets all objects from the heap
+        //--    by the order of their priority,
+        //--    stored in an array that is returned
+        //--    while retaining the heap's structure
+        //--
+        
+        return this.copy().sort();
+    }
+
     this.find = function(o,same) {
         //--    searches for a node with the object 'o'
         //--    using a compare function 'same'
@@ -8217,6 +8227,22 @@ function Heap(_type='max') {
         }
 
         return true;
+    }
+
+    this.copy = function() {
+        //--    creates a copy of this heap.
+        //--
+        //--    note: time complexity:  N
+        //--
+
+        var heap = new Heap(this.type);
+        for (let node of this.list) {
+            var newnode = new HeapNode();
+            newnode.priority = node.priority;
+            newnode.obj = node.obj;
+            heap.list.push(newnode);
+        }
+        return heap;
     }
 
 }//end Heap
@@ -8924,3 +8950,240 @@ function Tree(node) {
         }
     }
 }//end Tree
+
+
+
+////////////////////////////////////////////
+///   PRIORITY QUEUE   ///////////////////// (LINKED LIST METHOD)
+////////////////////////////////////////////
+function PriorityQueueNode(obj, priority=0, next=null) {
+
+    // the priority of a node determines how much
+    // to traverse on insertion
+    this.priority = priority;
+
+    // holds the data object to be enqueued
+    this.obj = obj;
+
+    // node in front of this node. If null, this
+    // is the leading node in the queue
+    this.next = next;
+}
+function PriorityQueue(sort_by = (a,b) => a > b) {
+
+    this.sort_by = sort_by;
+
+    this.tail = null; // has the highest priority
+
+    this.head = null;
+
+    this.size = 0;
+
+    this.in = function(obj, priority=0) {
+        //--    enqueues object into the list. Returns
+        //--    enqueued PriorityQueueNode
+        //--
+
+        this.size++;
+
+        // case: no tail
+        if (!this.tail) {
+            this.tail = new PriorityQueueNode(obj, priority);
+            this.head = this.tail;
+            return this.tail;
+        }
+
+        // case: tail
+        var curr = this.tail;
+        var prev = null;
+        while (curr && this.sort_by(priority, curr.priority)) {
+            prev = curr;
+            curr = curr.next;
+        }
+
+        // case: tail -> no nodes traversed
+        if (!prev) {
+            this.tail = new PriorityQueueNode(obj, priority, this.tail);
+            return this.tail;
+        }
+
+        // case: tail -> all nodes traversed
+        if (!curr) {
+            prev.next = new PriorityQueueNode(obj, priority);
+            this.head = prev.next;
+            return prev.next;
+        }
+
+        // case: tail -> some nodes traversed
+        prev.next = new PriorityQueueNode(obj, priority, curr);
+        return prev.next;
+    }
+
+    this.out = function() {
+        //--    dequeues the highest priority object
+        //--
+
+        // case: no tail
+        if (!this.tail) {
+            return null;
+        }
+
+        this.size--;
+
+        // case: tail -> no more nodes
+        if (!this.tail.next) {
+            var temp = this.tail;
+            this.tail = null;
+            this.head = null;
+            return temp;
+        }
+
+        // case: tail -> some more nodes
+        this.temp = this.tail;
+        this.tail = this.tail.next;
+        return this.temp;
+    }
+
+    this.first = function() {
+        //--    returns the highest priority object
+        //--
+
+        return this.tail ? this.tail.obj : null;
+    }
+
+    this.last = function() {
+        //--    returns the lowest priority object
+        //--
+
+        return this.head ? this.head.obj : null;
+    }
+
+    this.is_empty = function() {
+        //--    returns if queue is empty
+        //--
+
+        return !this.tail;
+    }
+
+    this.count = function() {
+        //--    returns size of queue
+        //--
+
+        return this.size;
+    }
+
+    this.clear = function() {
+        //--    removes all objects from queue
+        //--
+
+        this.tail = null;
+        this.head = null;
+        this.size = 0;
+    }
+
+    this.data = function() {
+        //--    returns sorted list of objects.
+        //--    (0th index is highest priority)
+        //--
+
+        var sorted = [];
+        var curr = this.tail;
+        while (curr) {
+            sorted.push(curr.obj);
+            curr = curr.next;
+        }
+        return sorted;
+    }
+
+    this.dump = function() {
+        //--    dequeues sorted list of objects.
+        //--    (0th index is highest priority)
+        //--
+
+        var sorted = [];
+        var curr = this.tail;
+        while (curr) {
+            sorted.push(curr.obj);
+            curr = curr.next;
+        }
+        this.clear();
+        return sorted;
+    }
+
+    this.each = function(callback = (object, index, priority) => {},
+        break_when = (object, index, priority) => {}) {
+        //--    runs callback on each object from
+        //--    highest priority to lowest. Can be broken
+        //--    on the given break_when condition callback
+        //--
+
+        var i = 0;
+        var curr = this.tail;
+        while (curr) {
+            if (break_when(curr.obj, i, curr.priority)) {
+                break;
+            }
+            callback(curr.obj, i, curr.priority);
+            curr = curr.next;
+            i++;
+        }
+    }
+
+    this.at = function(priority) {
+        //--    returns all objects with this priority
+        //--
+
+        var list = [];
+        var i = 0;
+        var curr = this.tail;
+        while (curr) {
+            if (curr.priority === priority) {
+                list.push(curr.obj);
+            }
+            curr = curr.next;
+            i++;
+        }
+        return list;
+    }
+
+    this.each_at = function(priority, callback = (object, index, priority) => {},
+        break_when = (object, index, priority) => {}) {
+        //--    runs callback on each object with
+        //--    the given priority. Can be broken on
+        //--    the given break_when condition callback
+        //--
+
+        var i = 0;
+        var curr = this.tail;
+        while (curr) {
+            if (break_when(curr.obj, i, curr.priority)) {
+                break;
+            }
+            if (curr.priority === priority) {
+                callback(curr.obj, i, curr.priority);
+            }
+            curr = curr.next;
+            i++;
+        }
+    }
+
+    this.first_at = function(priority, callback = (object, index, priority) => {}) {
+        //--    runs callback on the first object with
+        //--    the given priority. Has an additional
+        //--    benefit of also returning the callback's
+        //--    return value (unlike each and each_at).
+        //--    If not found, returns false
+        //--
+
+        var i = 0;
+        var curr = this.tail;
+        while (curr) {
+            if (curr.priority === priority) {
+                return callback(curr.obj, i, curr.priority);
+            }
+            curr = curr.next;
+            i++;
+        }
+        return false;
+    }
+}
