@@ -28,7 +28,7 @@ import { Limb } from "../Limb.js";
 export { InteractionManager, InteractionManager as Interact }; // also export an alias
 
 /**
- * @todo re-allocate chain function definitions to static private members. (anonymous functions are created on call, unlike static members)
+ * @todo re-allocate chain function definitions to static private members. (anonymous functions are created on call, unlike static members) <-- to increase performance
  * @class InteractionManager
  * 
  * Static class - handles various types of user interactions.
@@ -47,7 +47,7 @@ class InteractionManager {
     static last_mpos;
 
     /** Default sort_by function used for all interactive sorting */
-    static default_sort_by = (item) => InteractionManager.sprite_of(item).layer;
+    static default_sort_by = (item) => InteractionManager.sprite_of(item).id;
 
     /** Default compare_by function used for all interactive comparing */
     static default_compare_by = (item) => InteractionManager.sprite_of(item).id;

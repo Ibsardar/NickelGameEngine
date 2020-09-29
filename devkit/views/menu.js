@@ -53,6 +53,9 @@ menu.game_init = () => {
     GameManager.set_groups(['game'], 'only'); // fire is in 'ui' group so it will not be updated
     UIBuilder.config(MENU_UI_OPTS)
 
+    // turn off renderer for this page
+    GameManager.world.renderer.off();
+
     // hide elements
     $('.dk-rnav').hide('slow');
 

@@ -41,6 +41,25 @@ var selected;
 var mode='select'; // body, select, pivot, connect, joint
 var snaps=[0,0];
 var bg;
+var STEPS = {
+    OVERLAY : 5,
+    UI : 4,
+    GAME_OVERLAY : 3,
+    GAME : 2,
+    GAME_UNDERLAY : 1,
+    WORLD : 0
+};
+var LAYERS = {
+    UI : {
+        MAIN : 50
+    },
+    GAME : {
+        MAIN : 50
+    },
+    WORLD : {
+        MAIN : 50
+    }
+};
 
 // Module Globals (functions)
 var select = (item) => {
@@ -120,7 +139,8 @@ load_limb = (image) => {
     var ctr = GameManager.world.get_grid_point([Game.get_w()/2, Game.get_h()/2]);
     item.sprite.set_center(ctr[0], ctr[1]);
     limbs.push(item);
-    GameManager.world.load_updater(item);
+    GameManager.world.renderer.obj.add(STEPS.GAME, LAYERS.GAME.MAIN, item);
+    //GameManager.world.load_updater(item);
 
     // also auto-resize if too small
     if (item.sprite.get_width() < 32 && item.sprite.get_height() < 32)
@@ -153,6 +173,14 @@ actor_builder.game_init = () => {
     UIBuilder.config(AB_UI_OPTS);
     Interact.defer_resets();
     Interact.skip_dead();
+
+    // build renderer stack
+    GameManager.world.renderer.step.add(STEPS.UI);
+    GameManager.world.renderer.step.add(STEPS.GAME);
+    GameManager.world.renderer.step.add(STEPS.WORLD);
+    GameManager.world.renderer.layer.add(STEPS.UI, LAYERS.UI.MAIN);
+    GameManager.world.renderer.layer.add(STEPS.GAME, LAYERS.GAME.MAIN);
+    GameManager.world.renderer.layer.add(STEPS.WORLD, LAYERS.WORLD.MAIN);
 
     // show elements
     $('.dk-rnav').show('slow');
@@ -299,7 +327,9 @@ actor_builder.game_init = () => {
         position : [0,0],
         width : Game.get_w(),
         height : Game.get_h(),
-        grid_color : '#434343'
+        grid_color : '#434343',
+        step : STEPS.WORLD,
+        layer : LAYERS.WORLD.MAIN
     });
 
     // labels
@@ -307,7 +337,9 @@ actor_builder.game_init = () => {
         text : 'Actor Builder:',
         align : 'left',
         position : [50,50],
-        text_color : 'red'
+        text_color : 'red',
+        step : STEPS.UI,
+        layer : LAYERS.UI.MAIN
     });
 
     // btns
@@ -315,6 +347,8 @@ actor_builder.game_init = () => {
         text : 'Main Menu',
         align : 'left',
         position : [100,100],
+        step : STEPS.UI,
+        layer : LAYERS.UI.MAIN
     });
     main_menu_btn.on_hover   = () => { main_menu_btn.image.color = 'yellow'; }
     main_menu_btn.on_leave   = () => { main_menu_btn.image.color = UIBuilder.color_secondary; }

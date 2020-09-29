@@ -154,7 +154,7 @@ class GarbageCollector {
             GameManager.world.load = GameManager.world.load.filter(garbage_filter);
 
             // remove from world's render stack
-            if (GameManager.world.has_render_stack()) {
+            if (GameManager.world.has_render_stack) {
                 /**@todo */
             }
         }
@@ -228,7 +228,7 @@ class GarbageCollector {
             );
 
             // remove from world's render stack
-            if (GameManager.world.has_render_stack()) {
+            if (GameManager.world.has_render_stack) {
                 /**@todo */
             }
         }
@@ -253,7 +253,7 @@ class GarbageCollector {
             );
 
             // remove from world's render stack
-            if (GameManager.world.has_render_stack()) {
+            if (GameManager.world.has_render_stack) {
                 /**@todo */
             }
         }
@@ -279,7 +279,7 @@ class GarbageCollector {
             );
 
             // remove from world's render stack
-            if (GameManager.world.has_render_stack()) {
+            if (GameManager.world.has_render_stack) {
                 /**@todo */
             }
         }

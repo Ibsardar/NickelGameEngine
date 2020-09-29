@@ -1312,7 +1312,7 @@ var GridBuilder = {
 
         // updates render stack (built seperately, empty by default)
         grid.render_update = () => {};
-        grid.has_render_stack = () => false;
+        grid.has_render_stack = false;
 
         // Efficient Transformation Algorithm:
         // - save current canvas to 'pre_grid_canvas'
@@ -1795,13 +1795,12 @@ var GridBuilder = {
         grid.render_stack = new PriorityQueue();
 
         // enable
-        grid.has_render_stack = () => true;
+        grid.has_render_stack = true;
         grid.render_update = () => {
             if (grid.has_render_stack)
                 grid.renderer.stack.update();
         };
 
-        /**@todo test */
         // define structure
         rs = grid.render_stack;
         grid.renderer = {
@@ -1907,14 +1906,19 @@ var GridBuilder = {
                     var removed = null;
                     rs.each_at(priority, (step) => step.each_at(layer, (load) => {
                         for (var i in load)
-                            if (index === i) {
+                            if (index == i) {
                                 removed = load.splice(i,1)[0];
                                 break;
                             }
                     }, () => removed), () => removed) // <-- breaks when removed is truthy
                     return removed;
                 },
-                add : (priority, layer, obj) => rs.first_at(priority, (step) => step.first_at(layer, (load) => load.push(obj))),
+                add : (priority, layer, obj) => {
+                    var i = -1;
+                    rs.first_at(priority, (step) => step.first_at(layer, (load) => i = load.push(obj) - 1))
+                    return i; // <-- index of added object
+                },
+                repl : (priority, layer, index, obj) => rs.first_at(priority, (step) => step.first_at(layer, (load) => load[index] = obj)),
                 change : (priority, from_layer, to_layer, obj, compare = (a,b) => a.id === b.id) => {
                     grid.renderer.obj.rem(priority, from_layer, obj, compare) ?
                         grid.renderer.obj.add(priority, to_layer, obj) :
@@ -1932,7 +1936,7 @@ var GridBuilder = {
                 },
                 audit3 : (obj, compare = (a,b) => a.id === b.id) => {
                     var found = 0;
-                    rs.each(priority, (step) => step.each((load) => load.forEach((o) => compare(obj,o) ? found++ : null)));
+                    rs.each((step) => step.each((load) => load.forEach((o) => compare(obj,o) ? found++ : null)));
                     return found;
                 }
             }

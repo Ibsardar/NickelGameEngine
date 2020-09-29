@@ -259,7 +259,7 @@ class GameManager {
         }
 
         if (GameManager._world.load.length > GameManager.max_world_objects_until_gc ||
-            (GameManager._world.has_render_stack() && GameManager._world.renderer.obj.count() > GameManager.max_world_objects_until_gc)) { /**@todo implement renderer.obj.count */
+            (GameManager._world.has_render_stack && GameManager._world.renderer.obj.count() > GameManager.max_world_objects_until_gc)) { /**@todo implement renderer.obj.count */
             if (Nickel.DEBUG) console.log('World garbage collection triggered. GC timer restarted.');
             GarbageCollector.collect(null, GameManager.trigger_delete_events_flag); // collect all
             GameManager._gc_timer.restart();
