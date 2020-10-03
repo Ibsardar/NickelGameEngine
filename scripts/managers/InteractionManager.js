@@ -28,7 +28,7 @@ import { Limb } from "../Limb.js";
 export { InteractionManager, InteractionManager as Interact }; // also export an alias
 
 /**
- * @todo re-allocate chain function definitions to static private members. (anonymous functions are created on call, unlike static members)
+ * @todo re-allocate chain function definitions to static private members. (anonymous functions are created on call, unlike static members) <-- to increase performance
  * @class InteractionManager
  * 
  * Static class - handles various types of user interactions.
@@ -47,7 +47,7 @@ class InteractionManager {
     static last_mpos;
 
     /** Default sort_by function used for all interactive sorting */
-    static default_sort_by = (item) => InteractionManager.sprite_of(item).layer;
+    static default_sort_by = (item) => InteractionManager.sprite_of(item).id;
 
     /** Default compare_by function used for all interactive comparing */
     static default_compare_by = (item) => InteractionManager.sprite_of(item).id;
@@ -85,6 +85,14 @@ class InteractionManager {
         last : null,
         over_group : false
     }
+
+    /** format: [
+     *      {classref:<Class>, path:['attribute','path,'to','sprite']},
+     *      {classref:<Class>, path:['attribute','path,'to','sprite']},
+     *      ...etc
+     *  ]
+     */
+    static _class_data = [];
 
     /// Main interaction functions
 
@@ -532,6 +540,8 @@ class InteractionManager {
 
     static items_under_point(items=[], pt=[0,0], sort_by = InteractionManager.default_sort_by, reversed=false, only_first=false) {
 
+        if (!items.length) return [];
+        
         var heap = new Heap(reversed ? 'min' : 'max');
         for (let item of items) {
             var spr = InteractionManager.sprite_of(item);
@@ -547,6 +557,7 @@ class InteractionManager {
 
     static item_under_point(items=[], pt=[0,0], sort_by = InteractionManager.default_sort_by, reversed=false) {
 
+        if (!items.length) return null;
         return InteractionManager.items_under_point(items, pt, sort_by, reversed, true);
     }
 
@@ -557,6 +568,8 @@ class InteractionManager {
         if (item instanceof Limb) return item.sprite; // handles Limb
         if (item instanceof Skeleton) return item.body.sprite; // handles Skeleton
         if (item instanceof Actor) return item.skeleton.body.sprite; // handles Actor
+        for (let d of InteractionManager._class_data)
+            if (item instanceof d.classref) return Nickel.util.subprop(d.path, item);
         return false;
     }
 
@@ -579,6 +592,37 @@ class InteractionManager {
     static mouse() {
 
         return InteractionManager.last_mpos;
+    }
+
+    /**
+     * Registers a new Class (along with a Sprite path) to be recognized for interactivity.
+     * 
+     * @param {Class} classref 
+     * @param {[]} attribute_path_to_sprite if [], then Class is/extends Sprite class.
+     *                                      If ['a'], then instance_of_class['a'] = instance_of_sprite
+     *                                      If ['a', 'b'], then instance_of_class['a']['b'] = instance_of_sprite
+     * @returns registration_id (used as a parameter in the deregister function)
+     */
+    static register(classref, attribute_path_to_sprite=[]) {
+
+        return InteractionManager._class_data.push({
+            classref: classref,
+            path: attribute_path_to_sprite
+        }) - 1;
+    }
+
+    /**
+     * Deregisters an existing custom added Class so it is not recognized as interactable anymore.
+     * If no ID is given, deregister all custom added Classes.
+     * 
+     * @param {Number} registration_id ID returned from register function
+     */
+    static deregister(registration_id=null) {
+
+        if (registration_id === null)
+            InteractionManager._class_data = [];
+        else
+            InteractionManager._class_data.splice(registration_id, 1);
     }
 
     // private helpers

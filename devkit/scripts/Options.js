@@ -22,7 +22,7 @@ import { Game } from "../../scripts/game.js";
 import { DATA } from "../../scripts/data_loader2.js";
 import { GameManager } from "../../scripts/managers/GameManager.js";
 
-export { GRID_OPTS, FIRE_OPTS, MENU_UI_OPTS, AB_UI_OPTS };
+export { GRID_OPTS, SIMPLE_GRID_OPTS, FIRE_OPTS, MENU_UI_OPTS, AB_UI_OPTS, DEMO_UI_OPTS };
 
 // UI by view options
 var MENU_UI_OPTS = {
@@ -35,6 +35,16 @@ var MENU_UI_OPTS = {
     color_tertiary : 'red'
 }
 var AB_UI_OPTS = {
+    scene : Game,
+    manager : GameManager,
+    element_size_4 : [350, 50],
+    weight : 'bold',
+    color_primary : '#676767',
+    color_secondary : '#343434',
+    color_tertiary : 'red',
+    outline_thickness : 2
+}
+var DEMO_UI_OPTS = {
     scene : Game,
     manager : GameManager,
     element_size_4 : [350, 50],
@@ -106,7 +116,44 @@ var GRID_OPTS = {
     rotation_data       : grid_rot,
     zoom_data           : grid_zoom,
     limit_data          : grid_lims,
-    navmesh_data        : grid_nav
+    navmesh_data        : grid_nav,
+    renderer_enabled    : true
+}
+
+// option data for Grid WITHOUT renderer
+var SIMPLE_GRID_OPTS = {
+    scene               : Game,
+    /*matrix              : /*[[1,2,3,2,3,3,2,2,2,3,2,3,3,2,2,0,1,2,3,2],
+                           [0,0,1,0,0,1,1,3,2,3,2,3,3,2,2,0,1,2,3,2],
+                           [0,2,3,2,0,1,3,3,2,3,2,3,3,2,2,0,1,2,3,2],
+                           [0,1,2,0,2,2,0,1,2,3,2,3,3,2,2,0,1,2,3,2],
+                           [0,0,1,0,0,1,1,3,2,3,2,3,3,2,2,0,1,2,3,2],
+                           [0,2,3,2,0,1,3,3,2,3,2,3,3,2,2,0,1,2,3,2],
+                           [0,1,2,0,2,2,0,1,2,3,2,3,3,2,2,0,1,2,3,2],
+                           [0,0,1,0,0,1,1,3,2,3,2,3,3,2,2,0,1,2,3,2],
+                           [0,1,2,0,2,2,0,1,2,3,2,3,3,2,2,0,1,2,3,2],
+                           [0,0,1,0,0,1,1,3,2,3,2,3,3,2,2,0,1,2,3,2],
+                           [0,2,3,2,0,1,3,3,2,3,2,3,3,2,2,0,1,2,3,2],
+                           [0,1,2,0,2,2,0,1,2,3,2,3,3,2,2,0,1,2,3,2],
+                           [0,0,1,0,0,1,1,3,2,3,2,3,3,2,2,0,1,2,3,2],
+                           [0,0,1,0,0,1,1,3,2,3,2,3,3,2,2,0,1,2,3,2],
+                           [0,0,1,0,0,1,1,3,2,3,2,3,3,2,2,0,1,2,3,2]],* /
+                          [[3,3,0,3,3],
+                           [3,0,1,0,3],
+                           [0,1,2,1,0],
+                           [3,0,1,0,3],
+                           [3,3,0,3,3]], */
+    /*types               : { 0:DATA.TILE_00,
+                            1:DATA.TILE_01,
+                            2:DATA.TILE_02,
+                            3:DATA.TILE_03 }, */
+    bg_data             : grid_bg,
+    scroll_data         : grid_scroll,
+    rotation_data       : grid_rot,
+    zoom_data           : grid_zoom,
+    limit_data          : grid_lims,
+    navmesh_data        : grid_nav,
+    renderer_enabled    : false
 }
 
 //all of these are used in FIRE_OPTS

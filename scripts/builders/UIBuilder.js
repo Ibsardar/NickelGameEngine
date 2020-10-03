@@ -31,6 +31,8 @@ class UIBuilder {
 
     static scene = null;
     static world = null;
+    static default_step = null;
+    static default_layer = null;
     static element_size_1 = [16,8];
     static element_size_2 = [32,16];
     static element_size_3 = [64,32];
@@ -77,6 +79,8 @@ class UIBuilder {
         scene:UIBuilder.scene,
         world:UIBuilder.world,
         manager:null,
+        default_step:null,
+        default_layer:null,
         element_size_1:UIBuilder.element_size_1,
         element_size_2:UIBuilder.element_size_2,
         element_size_3:UIBuilder.element_size_3,
@@ -101,6 +105,10 @@ class UIBuilder {
         if (options.scene) UIBuilder.scene = options.scene;
         if (options.world) UIBuilder.world = options.world;
         if (options.manager) UIBuilder.world = options.manager.world;
+        if (options.default_step && options.default_layer) {
+            UIBuilder.default_step = options.default_step;
+            UIBuilder.default_layer = options.default_layer;
+        }
         if (options.element_size_1) UIBuilder.element_size_1 = options.element_size_1;
         if (options.element_size_2) UIBuilder.element_size_2 = options.element_size_2;
         if (options.element_size_3) UIBuilder.element_size_3 = options.element_size_3;
@@ -137,6 +145,8 @@ class UIBuilder {
         font:UIBuilder.font,
         weight:UIBuilder.weight,
         valign:UIBuilder.valign,
+        step:UIBuilder.default_step,
+        layer:UIBuilder.default_layer,
         with_game_loop:false // if true, will continuously reset text position to button position
     }) {
 
@@ -184,11 +194,28 @@ class UIBuilder {
         if (UIBuilder.world) {
             btn.mouse_func = (x,y) => UIBuilder.world.get_grid_point([x,y]);
             if (options.replace) {
-                UIBuilder.world.load[options.replace._uib_world_index] = btn;
+                if (UIBuilder.world.has_render_stack) {
+                    UIBuilder.world.renderer.obj.repl(
+                        options.step ?? _defaults.step,
+                        options.layer ?? _defaults.layer,
+                        options.replace._uib_world_index,
+                        btn
+                    );
+                } else {
+                    UIBuilder.world.load[options.replace._uib_world_index] = btn;
+                }
                 btn._uib_world_index = options.replace._uib_world_index;
             } else {
-                UIBuilder.world.load_updater(btn);
-                btn._uib_world_index = UIBuilder.world.load.length - 1;
+                if (UIBuilder.world.has_render_stack) {
+                    btn._uib_world_index = UIBuilder.world.renderer.obj.add(
+                        options.step ?? _defaults.step,
+                        options.layer ?? _defaults.layer,
+                        btn
+                    );
+                } else {
+                    UIBuilder.world.load_updater(btn);
+                    btn._uib_world_index = UIBuilder.world.load.length - 1;
+                }
             }
         }
         return btn;
@@ -203,6 +230,8 @@ class UIBuilder {
         image_data:{img:null, w:0, h:0},
         text:'image-button',
         text_color:UIBuilder.color_primary,
+        step:UIBuilder.default_step,
+        layer:UIBuilder.default_layer,
     }) {
 
         if (options.replace && !options.replace._uib_world_index && options.replace._uib_world_index !== 0)
@@ -224,11 +253,28 @@ class UIBuilder {
         if (UIBuilder.world) {
             btn.mouse_func = (x,y) => UIBuilder.world.get_grid_point([x,y]);
             if (options.replace) {
-                UIBuilder.world.load[options.replace._uib_world_index] = btn;
+                if (UIBuilder.world.has_render_stack) {
+                    UIBuilder.world.renderer.obj.repl(
+                        options.step ?? _defaults.step,
+                        options.layer ?? _defaults.layer,
+                        options.replace._uib_world_index,
+                        btn
+                    );
+                } else {
+                    UIBuilder.world.load[options.replace._uib_world_index] = btn;
+                }
                 btn._uib_world_index = options.replace._uib_world_index;
             } else {
-                UIBuilder.world.load_updater(btn);
-                btn._uib_world_index = UIBuilder.world.load.length - 1;
+                if (UIBuilder.world.has_render_stack) {
+                    btn._uib_world_index = UIBuilder.world.renderer.obj.add(
+                        options.step ?? _defaults.step,
+                        options.layer ?? _defaults.layer,
+                        btn
+                    );
+                } else {
+                    UIBuilder.world.load_updater(btn);
+                    btn._uib_world_index = UIBuilder.world.load.length - 1;
+                }
             }
         }
         return btn;
@@ -242,7 +288,9 @@ class UIBuilder {
         size:4,
         fill_color:UIBuilder.color_secondary,
         outline_color:UIBuilder.color_tertiary,
-        outline_thickness:UIBuilder.outline_thickness
+        outline_thickness:UIBuilder.outline_thickness,
+        step:UIBuilder.default_step,
+        layer:UIBuilder.default_layer,
     }) {
         
         if (options.replace && !options.replace._uib_world_index && options.replace._uib_world_index !== 0)
@@ -267,11 +315,28 @@ class UIBuilder {
         if (UIBuilder.world) {
             btn.mouse_func = (x,y) => UIBuilder.world.get_grid_point([x,y]);
             if (options.replace) {
-                UIBuilder.world.load[options.replace._uib_world_index] = btn;
+                if (UIBuilder.world.has_render_stack) {
+                    UIBuilder.world.renderer.obj.repl(
+                        options.step ?? _defaults.step,
+                        options.layer ?? _defaults.layer,
+                        options.replace._uib_world_index,
+                        btn
+                    );
+                } else {
+                    UIBuilder.world.load[options.replace._uib_world_index] = btn;
+                }
                 btn._uib_world_index = options.replace._uib_world_index;
             } else {
-                UIBuilder.world.load_updater(btn);
-                btn._uib_world_index = UIBuilder.world.load.length - 1;
+                if (UIBuilder.world.has_render_stack) {
+                    btn._uib_world_index = UIBuilder.world.renderer.obj.add(
+                        options.step ?? _defaults.step,
+                        options.layer ?? _defaults.layer,
+                        btn
+                    );
+                } else {
+                    UIBuilder.world.load_updater(btn);
+                    btn._uib_world_index = UIBuilder.world.load.length - 1;
+                }
             }
         }
         return btn;
@@ -287,7 +352,9 @@ class UIBuilder {
         text_color:UIBuilder.color_primary,
         font:UIBuilder.font,
         weight:UIBuilder.weight,
-        valign:UIBuilder.valign
+        valign:UIBuilder.valign,
+        step:UIBuilder.default_step,
+        layer:UIBuilder.default_layer,
     }) {
         if (options.replace && !options.replace._uib_world_index && options.replace._uib_world_index !== 0)
             return console.error('ERROR: UIBuilder>label: replacement was not built by the UIBuilder.');
@@ -305,11 +372,28 @@ class UIBuilder {
             options.valign ?? _defaults.valign);
         if (UIBuilder.world) {
             if (options.replace) {
-                UIBuilder.world.load[options.replace._uib_world_index] = lbl;
+                if (UIBuilder.world.has_render_stack) {
+                    UIBuilder.world.renderer.obj.repl(
+                        options.step ?? _defaults.step,
+                        options.layer ?? _defaults.layer,
+                        options.replace._uib_world_index,
+                        lbl
+                    );
+                } else {
+                    UIBuilder.world.load[options.replace._uib_world_index] = lbl;
+                }
                 lbl._uib_world_index = options.replace._uib_world_index;
             } else {
-                UIBuilder.world.load_updater(lbl);
-                lbl._uib_world_index = UIBuilder.world.load.length - 1;
+                if (UIBuilder.world.has_render_stack) {
+                    lbl._uib_world_index = UIBuilder.world.renderer.obj.add(
+                        options.step ?? _defaults.step,
+                        options.layer ?? _defaults.layer,
+                        lbl
+                    );
+                } else {
+                    UIBuilder.world.load_updater(lbl);
+                    lbl._uib_world_index = UIBuilder.world.load.length - 1;
+                }
             }
         }
         return lbl;
@@ -328,7 +412,9 @@ class UIBuilder {
         border_color:UIBuilder.color_tertiary,
         grid_thickness:UIBuilder.outline_thickness,
         border_thickness:UIBuilder.outline_thickness,
-        image:{img:null, w:0, h:0}
+        image:{img:null, w:0, h:0},
+        step:UIBuilder.default_step,
+        layer:UIBuilder.default_layer,
     }) {
 
         if (options.replace && !options.replace._uib_world_index && options.replace._uib_world_index !== 0)
@@ -376,11 +462,28 @@ class UIBuilder {
         }
         if (UIBuilder.world) {
             if (options.replace) {
-                UIBuilder.world.load[options.replace._uib_world_index] = bg;
+                if (UIBuilder.world.has_render_stack) {
+                    UIBuilder.world.renderer.obj.repl(
+                        options.step ?? _defaults.step,
+                        options.layer ?? _defaults.layer,
+                        options.replace._uib_world_index,
+                        bg
+                    );
+                } else {
+                    UIBuilder.world.load[options.replace._uib_world_index] = bg;
+                }
                 bg._uib_world_index = options.replace._uib_world_index;
             } else {
-                UIBuilder.world.load_updater(bg);
-                bg._uib_world_index = UIBuilder.world.load.length - 1;
+                if (UIBuilder.world.has_render_stack) {
+                    bg._uib_world_index = UIBuilder.world.renderer.obj.add(
+                        options.step ?? _defaults.step,
+                        options.layer ?? _defaults.layer,
+                        bg
+                    );
+                } else {
+                    UIBuilder.world.load_updater(bg);
+                    bg._uib_world_index = UIBuilder.world.load.length - 1;
+                }
             }
         }
         return bg;
