@@ -28,9 +28,7 @@ import { GameManager } from '../../scripts/managers/GameManager.js';
 import { SIMPLE_GRID_OPTS, FIRE_OPTS, DEMO_UI_OPTS } from '../scripts/Options.js';
 import { View } from '../../scripts/View.js';
 import { UIBuilder } from '../../scripts/builders/UIBuilder.js';
-import { Limb } from '../../scripts/Limb.js';
 import { Interact } from '../../scripts/managers/InteractionManager.js';
-import { EditorItem } from '../scripts/EditorItem.js';
 
 export { demo }
 
@@ -56,14 +54,14 @@ demo.game_init = () => {
     Interact.defer_resets();
     Interact.skip_dead();
 
-    // show elements
+    // hide elements
     $('.dk-rnav').hide('slow');
 
     // custom unit
     unit = new Sprite(Game, DATA.IMG.CREEP_01);
     unit.set_origin_centered();
     unit.set_center(400, 300);
-    unit.set_rot_max(3); // 3 degrees at a time
+    unit.set_rot_max(23); // 23 degrees at a time
     GameManager.world.load_updater(unit);
 
     // Game Interactions
@@ -74,8 +72,8 @@ demo.game_init = () => {
             if (Game.key_upped == Nickel.KEYCODES.SPACE)
                 GameManager.world.reset_transform();
                 
-            Interact.onleftclick().top().else(
-                (mpos) => {
+            Interact.onleftclick().top().while(
+                (item,mpos) => {
                     
                     unit.turn_to(mpos, TURN_GRADUALLY);
                     

@@ -541,7 +541,7 @@ class InteractionManager {
     static items_under_point(items=[], pt=[0,0], sort_by = InteractionManager.default_sort_by, reversed=false, only_first=false) {
 
         if (!items.length) return [];
-        
+
         var heap = new Heap(reversed ? 'min' : 'max');
         for (let item of items) {
             var spr = InteractionManager.sprite_of(item);
@@ -644,7 +644,8 @@ class InteractionManager {
         var sub_chain;
         sub_chain = {
             do : (callback) => sub_chain,
-            else : (callback) => sub_chain
+            else : (callback) => sub_chain,
+            while : (callback) => sub_chain
         }
         chain = {
             top : (sort_by) => sub_chain,
@@ -755,6 +756,68 @@ class InteractionManager {
                     }
                 }
                 return sub_chain;
+            }
+
+        // if mb is already clicked
+        } else {
+
+            if ((mb === 0 && InteractionManager._lmb_click_data.pressed) ||
+                (mb === 1 && InteractionManager._mmb_click_data.pressed) ||
+                (mb === 2 && InteractionManager._rmb_click_data.pressed)) {
+                
+                // trigger chain
+                chain.top = (sort_by = InteractionManager.default_sort_by) => {
+
+                    InteractionManager.calc_mouse();
+                    var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
+                    var under = InteractionManager.item_under_point(items, InteractionManager.last_mpos, sort_by, false);
+                    
+                    // trigger event
+                    sub_chain.while = (f = (item, ptr) => sub_chain) => {
+                        f(under,saved);
+                        return sub_chain;
+                    }
+                    return sub_chain;
+                }
+                chain.bottom = (sort_by = InteractionManager.default_sort_by) => {
+
+                    InteractionManager.calc_mouse();
+                    var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
+                    var under = InteractionManager.item_under_point(items, InteractionManager.last_mpos, sort_by, true);
+                    
+                    // trigger event
+                    sub_chain.while = (f = (item, ptr) => sub_chain) => {
+                        f(under,saved);
+                        return sub_chain;
+                    }
+                    return sub_chain;
+                }
+                chain.all = (sort_by = InteractionManager.default_sort_by) => {
+
+                    InteractionManager.calc_mouse();
+                    var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
+                    var unders = InteractionManager.items_under_point(items, InteractionManager.last_mpos, sort_by, false);
+                    
+                    // trigger event
+                    sub_chain.while = (f = (items, ptr) => sub_chain) => {
+                        f(unders,saved);
+                        return sub_chain;
+                    }
+                    return sub_chain;
+                }
+                chain.all_reversed = (sort_by = InteractionManager.default_sort_by) => {
+
+                    InteractionManager.calc_mouse();
+                    var saved = Nickel.v2d.cp(InteractionManager.last_mpos);
+                    var unders = InteractionManager.items_under_point(items, InteractionManager.last_mpos, sort_by, true);
+                    
+                    // trigger event
+                    sub_chain.while = (f = (items, ptr) => sub_chain) => {
+                        f(unders,saved);
+                        return sub_chain;
+                    }
+                    return sub_chain;
+                }
             }
         }
         return chain;

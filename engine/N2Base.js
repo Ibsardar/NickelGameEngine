@@ -7213,10 +7213,8 @@ function Sprite(scene, image_data, has_bbox=true,
         var ang = 0;
         if (!instant) {
 
-            // avoid negative rotations
-            if (this.get_rot() < 0) {
-                this.set_rot(this.get_rot() + 360);
-            }
+            // avoid inflated turn values
+            turn = Nickel.util.trim(turn);
 
             // pick the quicker turn
             if (angle > 180) {
@@ -7280,6 +7278,9 @@ function Sprite(scene, image_data, has_bbox=true,
         // if gradual
         var ang = 0;
         if (!instant) {
+
+            // avoid inflated turn values
+            turn = Nickel.util.trim(turn);
 
             // pick the quicker turn
             if (turn > 180) {
