@@ -540,6 +540,8 @@ class InteractionManager {
 
     static items_under_point(items=[], pt=[0,0], sort_by = InteractionManager.default_sort_by, reversed=false, only_first=false) {
 
+        if (!items.length) return [];
+        
         var heap = new Heap(reversed ? 'min' : 'max');
         for (let item of items) {
             var spr = InteractionManager.sprite_of(item);
@@ -555,6 +557,7 @@ class InteractionManager {
 
     static item_under_point(items=[], pt=[0,0], sort_by = InteractionManager.default_sort_by, reversed=false) {
 
+        if (!items.length) return null;
         return InteractionManager.items_under_point(items, pt, sort_by, reversed, true);
     }
 

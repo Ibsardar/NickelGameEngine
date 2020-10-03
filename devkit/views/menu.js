@@ -33,6 +33,7 @@ import { UIBuilder } from '../../scripts/builders/UIBuilder.js';
 import { Projectile } from '../../scripts/projectiles/Projectile.js';
 import { ParticleBulletSystem } from '../../scripts/projectiles/ParticleBulletSystem.js';
 import { Actor } from '../../scripts/Actor.js';
+import { demo } from './demo.js';
 
 export { menu }
 
@@ -94,6 +95,16 @@ menu.game_init = () => {
     actor_builder_btn.on_leave = () =>   { actor_builder_btn.image.color = UIBuilder.color_secondary; }
     actor_builder_btn.on_click = () =>   { actor_builder_btn.image.color = 'orange'; }
     actor_builder_btn.on_release = () => { View.next(actor_builder).init(); }
+    var demo_btn = UIBuilder.text_button({
+        text : 'Demo #1',
+        align : 'left',
+        position : [100,150],
+        size : 4
+    });
+    demo_btn.on_hover = () =>   { demo_btn.image.color = 'yellow'; }
+    demo_btn.on_leave = () =>   { demo_btn.image.color = UIBuilder.color_secondary; }
+    demo_btn.on_click = () =>   { demo_btn.image.color = 'orange'; }
+    demo_btn.on_release = () => { View.next(demo).init(); }
 
     // for testing...
     Nickel.GLOBALS.gm = GameManager;
