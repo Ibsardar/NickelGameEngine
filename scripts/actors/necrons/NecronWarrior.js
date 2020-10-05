@@ -18,12 +18,11 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-import { UnitActor } from "./UnitActor.js";
-import { GaMa } from "../managers/GameManager.js";
-import { HumanoidSkeleton } from "../skeletons/HumanoidSkeleton.js";
-import { DATA } from "../data_loader2.js";
-import { GaussRifle } from "../limbs/weapons/GaussRifle.js";
-//import { GuassRifle } from "../weapons/GuassRifle.js";    @todo
+import { UnitActor } from "../UnitActor.js";
+import { GaMa } from "../../managers/GameManager.js";
+import { HumanoidSkeleton } from "../../skeletons/HumanoidSkeleton.js";
+import { DATA } from "../../data_loader2.js";
+import { GaussRifle } from "../../limbs/weapons/GaussRifle.js";
 //import { LivingMetal } from "../armors/LivingMetal.js";   @todo
 
 export { NecronWarrior };
@@ -44,17 +43,26 @@ class NecronWarrior extends UnitActor {
     constructor(group, team) {
 
         var humanoid_sk = new HumanoidSkeleton();
-        humanoid_sk.set_images(NecronWarrior.data, true);
+        humanoid_sk.set_images(NecronWarrior.data, 'all', true);
 
         super(GaMa.scene, humanoid_sk, group);
 
+        this.init_body_from_data(NecronWarrior.data);
+
         var gun = new GaussRifle();
         this.equip(gun, 'rarm');
-        this.skeleton.part('rarm').enable();
+        gun.flip_v();
+
         this._team = team;
     }
-
-    // stuff unique to necron warriors here...
+    
+    /**
+     * Returns body part img data in the format:
+     * 'body' : img_data
+     * 'larm' : img_data
+     * 'rarm' : img_data
+     */
+    get_data = () => NecronWarrior.data;
 
     /// image data for default body parts.
     static data = {

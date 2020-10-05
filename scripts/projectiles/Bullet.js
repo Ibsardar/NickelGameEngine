@@ -137,6 +137,16 @@ class Bullet extends Projectile {
     }
 
     /**
+     * Static function: Triggers events based on current state of bullets.
+     * Must be called at regular intervals (ex: 60 times per second i.e. 60fps).
+     */
+    static handle_triggers() {
+
+        // handle Bullet-specific triggers
+        // ...
+    }
+
+    /**
      * Static function: removes all targets, projectiles, and their
      * quadtree for a certian group. Does not trigger delete event by
      * default. Does not internally destroy projectiles by default.
@@ -155,22 +165,29 @@ class Bullet extends Projectile {
     }
 
     /**
-     * Static function: removes all destroyed projectiles. Does
-     * not remove empty groups. Does not trigger delete event by
+     * Static function: removes all destroyed projectiles. Also
+     * removes empty groups. Does not trigger delete event by
      * default.
-     * * note: also applies parent class deletions
+     * * note: also applies parent class deletions //@todo replace this comment with the proper warning
      * 
-     * @param {Boolean} [trigger=false] trigger delete events
+     * @param {Boolean} [trigger=false] trigger delete events //@todo remove this parameter
      */
     static delete_destroyed(trigger=false) {
 
         // parent class deletions
-        Projectile.delete_destroyed(trigger);
+        //Projectile.delete_destroyed(trigger);
 
         // delete from this class
         var ps = Bullet._p_bullets;
+
+        // remove empty groups
+        for (var i in ps) 
+            if (!ps[i] || !ps[i].length)
+                delete ps[i];
+        
+        // remove dead objects
         for (var g in ps)
-            ps[g] = ps[g].filter(p => p._state != Projectile.DESTROYED);
+            ps[g] = ps[g].filter(p => p && p._state != Projectile.DESTROYED);
     }
     
     /**
@@ -184,6 +201,17 @@ class Bullet extends Projectile {
         for (var g in this._p_bullets)
             c += this._p_bullets[g].length;
         return c;
+    }
+
+    /**
+     * @overrides parent class function.
+     * Resets all static data to the default values.
+     * If deep is false, then do not reset parent class.
+     */
+    static reset(deep=true) {
+
+        if (deep) Projectile.reset();
+        Bullet._p_bullets = {};
     }
     
     /**

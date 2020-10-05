@@ -3,7 +3,25 @@
     "TANK_01" :                     {"img" : "../images/tank01.png",                    "w" : 21,   "h" : 15},
     "HEALTHBAR_RED" :               {"img" : "../images/ui/bar-red.png",                "w" : 128,  "h" : 8},
     "HEALTHBAR_GREEN" :             {"img" : "../images/ui/bar-green.png",              "w" : 128,  "h" : 8},
-    "NECRON_BODY_01" :              {"img" : "../images/Necron/necron.png",             "w" : 8,    "h" : 9, "siz" : [1,1], "pivot" : [3,5], "larm" : [5,1], "rarm" : [5,8]},
-    "NECRON_WEAP_01" :              {"img" : "../images/Necron/gauss_rifle.png",        "w" : 15,   "h" : 6, "siz" : [1,1], "pivot" : [5,5]},
-    "NECRON_PROJ_01" :              {"img" : "../images/Necron/gauss_ball.png",         "w" : 10,   "h" : 10}
+    "NECRON_BODY_01" :              {"img" : "../images/Necron/necron.png",             "w" : 8,    "h" : 9, "pivot" : [3,4], "larm" : [1,-4], "rarm" : [1,4], "scale" : [8,8]},
+    "NECRON_WEAP_01" :              {"img" : "../images/Necron/gauss_rifle.png",        "w" : 15,   "h" : 6, "pivot" : [6,5]},
+    "NECRON_PROJ_01" :              {"img" : "../images/Necron/gauss_ball.png",         "w" : 10,   "h" : 10},
+    
+    "NECRON_BODY_02" :              {"img" : "../images/Necron/wraith.png",             "w" : 7,    "h" : 9, "pivot" : [4,4], "larm" : [-1,-4], "rarm" : [-1,4], "back" : [-4,0], "ltool" : [1,-2], "rtool" : [1,2], "scale" : [8,8]},
+    "NECRON_PART_01" :              {"img" : "../images/Necron/wraith_arm.png",         "w" : 6,    "h" : 3, "pivot" : [0,1], "farm" : [5,0]},
+    "NECRON_PART_02" :              {"img" : "../images/Necron/wraith_forearm.png",     "w" : 5,    "h" : 1, "pivot" : [0,0], "hand" : [4,0]},
+    "NECRON_PART_03" :              {"img" : "../images/Necron/wraith_back.png",        "w" : 5,    "h" : 3, "pivot" : [4,1], "tail" : [-4,0]},
+    "NECRON_PART_04" :              {"img" : "../images/Necron/wraith_tail.png",        "w" : 5,    "h" : 3, "pivot" : [4,1]},
+    "NECRON_WEAP_02" :              {"img" : "../images/Necron/wraith_claw.png",        "w" : 5,    "h" : 3, "pivot" : [0,1]},
+
+    "NECRON_PART_05" :              {"img" : "../images/Necron/canoptek_wraith_side_claw.png",      "w" : 4,    "h" : 1, "pivot" : [1,0]},
+    "NECRON_PART_06" :              {"img" : "../images/Necron/canoptek_wraith_front_arm.png",      "w" : 5,    "h" : 2, "pivot" : [0,0], "hand" : [4,0]},
+    "NECRON_PART_07" :              {"img" : "../images/Necron/canoptek_wraith_back.png",           "w" : 10,   "h" : 8, "pivot" : [8,4], "tail" : [-6,0], "rclaw-1" : [1,2], "rclaw-2" : [-1,2], "rclaw-3" : [-3,2], "lclaw-1" : [1,-2], "lclaw-2" : [-1,-2], "lclaw-3" : [-3,-2] },
+    "NECRON_WEAP_03" :              {"img" : "../images/Necron/canoptek_wraith_front_claw.png",     "w" : 8,    "h" : 2, "pivot" : [2,0]},
+    "NECRON_WEAP_04" :              {"img" : "../images/Necron/canoptek_small_beamer.png",          "w" : 4,    "h" : 3, "pivot" : [0,1]},
+    
+    "NECRON_BODY_03" :              {"img" : "../images/Necron/immortal.png",           "w" : 8,    "h" : 9, "pivot" : [3,4], "larm" : [1,-4], "rarm" : [1,4], "scale" : [8,8]},
+    "NECRON_WEAP_05" :              {"img" : "../images/Necron/gauss_rifle_2.png",      "w" : 18,   "h" : 9, "pivot" : [8,3]},
+
+    "RED_MARKER" :                  {"img" : "../images/marker_red.png",                "w" : 1,    "h" : 1, "pivot" : [0,0]}
 }

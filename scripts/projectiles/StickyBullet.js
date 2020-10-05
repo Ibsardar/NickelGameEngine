@@ -182,22 +182,29 @@ class StickyBullet extends Bullet {
     }
 
     /**
-     * Static function: removes all destroyed projectiles. Does
-     * not remove empty groups. Does not trigger delete event by
+     * Static function: removes all destroyed projectiles. Also
+     * removes empty groups. Does not trigger delete event by
      * default.
-     * * note: also applies parent class deletions
+     * * note: also applies parent class deletions //@todo replace this comment with the proper warning
      * 
-     * @param {Boolean} [trigger=false] trigger delete events
+     * @param {Boolean} [trigger=false] trigger delete events //@todo remove this parameter
      */
     static delete_destroyed(trigger=false) {
 
         // parent class deletions
-        Bullet.delete_destroyed(trigger);
+        //Bullet.delete_destroyed(trigger);
 
         // delete from this class
         var ps = StickyBullet._p_stickies;
+
+        // remove empty groups
+        for (var i in ps) 
+            if (!ps[i] || !ps[i].length)
+                delete ps[i];
+        
+        // remove dead objects
         for (var g in ps)
-            ps[g] = ps[g].filter(p => p._state != StickyBullet.DESTROYED);
+            ps[g] = ps[g].filter(p => p && p._state != StickyBullet.DESTROYED);
     }
     
     /**
@@ -280,6 +287,17 @@ class StickyBullet extends Bullet {
 
         // scale only the position from host origin by scale difference
         //...TODO
+    }
+
+    /**
+     * @overrides parent class function.
+     * Resets all static data to the default values.
+     * If deep is false, then do not reset parent class.
+     */
+    static reset(deep=true) {
+
+        if (deep) Bullet.reset();
+        StickyBullet._p_stickies = {};
     }
 
     /**

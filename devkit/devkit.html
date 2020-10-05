@@ -1,0 +1,170 @@
+<!--
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Author:         Ibrahim Sardar
+//  Keywords:       Testing Views
+//  Filename:       game.html
+//  Date:           12/26/2019
+//  Description:    Basic game with different Views.
+//
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Honor Pledge:
+//
+//  I pledge that I have neither given nor received any help on this assignment.
+//
+//  ibsardar
+//
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2019 Copyright Holder All Rights Reserved.
+//
+////////////////////////////////////////////////////////////////////////////////
+--->
+
+<!DOCTYPE HTML>
+
+<html lang="en-US">
+
+<head>
+    <meta charset="UTF-8">
+    <title>DevKit</title>
+    <link rel="stylesheet" href="../styles/style.css" type="text/css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">
+    </script>
+    <script src = "../engine/N2Base.js">
+    </script>
+    <script src = "../engine/Nickel2.js">
+    </script>
+    <script src = "https://cdnjs.cloudflare.com/ajax/libs/howler/2.1.2/howler.min.js">
+    </script>
+    <script src = "https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.0.4/chroma.min.js">
+    </script>
+    <script src = "https://cdnjs.cloudflare.com/ajax/libs/stackblur-canvas/2.2.0/stackblur.min.js">
+    </script>
+    <!-- fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300;400;700&display=swap" rel="stylesheet"> <!-- narrow-futuristic-blocky -->
+    <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet"> <!-- modern -->
+    <link href="https://fonts.googleapis.com/css2?family=Medula+One&display=swap" rel="stylesheet"> <!-- narrow-blocky -->
+    <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;700&display=swap" rel="stylesheet"> <!-- futuristic -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> <!-- icons -->
+    <!-- removes favicon.ico error -->
+    <link rel="shortcut icon" href="">
+</head>
+
+<body class="dk-light">
+    <div class="dk-ctr dk-header"> Nickel Game Engine Development Kit </div>
+    <div class="">
+        <div class="dk-main-rnav">
+            <br>
+            <div id="main" class="dk-inline">
+            </div>
+        </div>
+        <div class="dk-rnav" hidden>
+            <div id="tray" class="dk-tray actor-builder" onclick="document.getElementById('tray-img-loader').click();">
+                <input type="file" accept="image/*" id="tray-img-loader" style="display: none;">
+                <div class="dk-ctr dk-mid">LOAD AN IMAGE</div>
+            </div>
+            <span>Name: </span>
+            <input class='dk-inline' value="">
+            <span>Relative URL: </span>
+            <input class='dk-inline' value="./">
+            <span>Size: </span>
+            <input class='dk-inline' value="0" disabled>
+            <input class='dk-inline' value="0" disabled>
+            <span>Scale: </span>
+            <input type='number' id='scale-x' class='dk-inline' value="" placeholder="x" min=0 max=99999.000>
+            <input type='number' id='scale-y' class='dk-inline' value="" placeholder="y" min=0 max=99999.000>
+            <span>Position: </span>
+            <input type='number' id='pos-x' class='dk-inline' value="" placeholder="x" min=-99999.00 max=99999.00>
+            <input type='number' id='pos-y' class='dk-inline' value="" placeholder="y" min=-99999.00 max=99999.00>
+            <input type='number' id='pos-z' class='dk-inline' value="" placeholder="z (layer)" min=-99 max=99>
+            <span>Pivot: </span>
+            <input type='number' id='pivot-x' class='dk-inline' value="" placeholder="x" min=-99999.00 max=99999.00>
+            <input type='number' id='pivot-y' class='dk-inline' value="" placeholder="y" min=-99999.00 max=99999.00>
+            <span>Snap: </span>
+            <input type='number' id='snap-x' class='dk-inline' value=0 placeholder="x" min=0 max=256>
+            <input type='number' id='snap-y' class='dk-inline' value=0 placeholder="y" min=0 max=256>
+            <br><br>
+            <button id='m-b' class="dk-btn-span" type="button">Set Body Mode</button>
+            <button id='m-s' class="dk-btn-span" type="button" class="dk-active">Selection Mode</button>
+            <button id='m-p' class="dk-btn-span" type="button">Pivot Mode</button>
+            <button id='m-c' class="dk-btn-span" type="button">Connect Mode</button>
+            <button id='m-j' class="dk-btn-span" type="button">Joint Mode</button>
+            <br><br>
+            <button id='blowup' class="dk-btn-span-2" type="button">Blow Up</button>
+            <button id='comein' class="dk-btn-span-2" type="button">Come Together</button>
+            <br><br>
+            <button id='gen' class="dk-btn-span-3" type="button">Generate</button>
+        </div>
+        <div class="dk-tray" style="font-size:1em">
+            <span class="dk-ctr dk">Output</span>
+            <textarea id='output' rows="2" cols="50" placeholder="Add this text to your IMAGES.json located in <project-name>/scripts/data/ folder..."></textarea>
+            <button type="button" class="dk-copy" onclick='$("#output").select();document.execCommand("copy");'>
+                <i class="fa fa-copy"></i>
+            </button>
+        </div>
+    </div>
+</body>
+</html>
+
+<script>
+
+    // will load all modules
+    // (should count as a gesture for audio playback)
+    function load_modules() {
+
+        // modules to attach to DOM
+        var modules = [
+            '../scripts/game.js',            // game file
+            '../scripts/data_loader2.js',    // data-load file
+            './views/main.js'                // main file
+        ];
+
+        // attach modules
+        (function next(i=0) {
+            if (i < modules.length) {
+                var script = document.createElement('script');
+                script.addEventListener('load', function tmp() {
+                    next(++i);
+                    script.removeEventListener('load', tmp);
+                });
+                script.setAttribute('type', 'module');
+                script.setAttribute('src', modules[i]);
+                document.head.appendChild(script);
+            } else
+                console.log("Modules loaded.");
+        }) ();
+    }
+
+    function load_limb(img) { /* override */ }
+
+    // call on page load
+    $(document).ready(function() {
+        
+        load_modules();
+
+        document.getElementById('tray-img-loader').addEventListener('change', (e) => {
+            var reader = new FileReader();
+            if (e.target.files[0])
+                reader.readAsDataURL(e.target.files[0]);
+            reader.onload = (event) => {
+                var img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    //img.width = img.naturalWidth;
+                    //img.height = img.naturalHeight;
+                    load_limb({
+                        img: img.src,
+                        w: img.naturalWidth,
+                        h: img.naturalHeight
+                    });
+
+                    // clear input value so file can be reloaded if needed
+                    $('#tray-img-loader').val('');
+                }
+            }
+        }, false);
+    });
+
+</script>

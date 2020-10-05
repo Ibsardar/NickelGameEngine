@@ -37,10 +37,9 @@ class GaussRifle extends RangedWeapon {
      */
     constructor(overlap=true) {
 
-        var img_data = DATA.IMG.NECRON_WEAP_01;
-        var pivot = DATA.IMG.NECRON_WEAP_01.pivot;
+        var data = DATA.IMG.NECRON_WEAP_01;
 
-        super(GaMa.scene, img_data, false, overlap, pivot);
+        super(GaMa.scene, data, false, overlap, data);
     
         this._projectile_data = {
             sprite_data: DATA.IMG.NECRON_PROJ_01,
@@ -49,12 +48,12 @@ class GaussRifle extends RangedWeapon {
             health: 999,
             snd_create: DATA.SND.LASER
         };
+
+        this.key_pt('muzzle', [7,0]);
+        this.key_pt('exhaust', [2,-1]);
     }
 
     update() {
-
-        for (var i=0; i<this._bullets.length; i++)
-            this._bullets[i].update();
         
         super.update();
     }
@@ -62,14 +61,15 @@ class GaussRifle extends RangedWeapon {
     shoot() {
 
         var b = new Bullet(GaMa.scene, this._projectile_data);
-        b.position = this.sprite.get_right();
+        b.position = this.get_world_pt(this.key_pt('muzzle'), true);
         b.speed = 4;
         b.direction = this.sprite.get_rot();
-        this._bullets.push(b);
+        //this._bullets.push(b);
         return b;
     }
 
+    // junk... don't think i need it... if you want to link the bullet to this gun, just set a callback into the bullet
     /// (Private) List of bullets from this gun
-    _bullets = [];
+    //_bullets = [];
 
 }//end class

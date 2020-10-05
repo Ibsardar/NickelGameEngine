@@ -32,17 +32,19 @@ export { Limb };
  */
 class Limb {
 
-    /// Default constructor.
+    /// Default constructor. (img_data can be an Image or {img:url, w:#, h:#})
     constructor(scene, img_data=false, collidable=false, overlap=true, offsets={}, pivot=null, is_loco=false) {
 
         this._limb_node = new TreeNode(this);
 
         // create sprite (or locomotive)
         if (img_data) {
+            this.img_data = img_data;
             this.sprite = new Sprite(scene, img_data, true, null, collidable);
             this.sprite.bound = () => {};
-            if (!pivot) this.sprite.set_origin_centered();
-            else if (pivot) this.sprite.set_origin(pivot);
+            if (pivot) this.sprite.set_origin(pivot);
+            else this.sprite.set_origin_centered();
+            this.sprite.hull.recalibrate();
             if (is_loco) this.sprite = new Locomotive({sprite: this.sprite});
         
         // if no sprite, we assume an 'empty' limb where no sprite exists
@@ -79,6 +81,7 @@ class Limb {
      * on this limb respect to its body (parent limb).
      * If no body, limb is respect to [0,0].
      * Also, if no image has been recorded, record it.
+     * Also, if origin/pivot changed, update the position.
      */
     _check_changes() {
 
@@ -86,13 +89,15 @@ class Limb {
         // - if limb's parent changed or...
         // - if limb's sprite changed or...
         // - if limb's offset from body changed
+        // (4th check only for position check: if limb's sprite's origin changed)
 
         var body_node = this._limb_node.parent;
 
         // set positoin changed flag
         if ((body_node ? body_node.obj._limb_pos_changed : false) ||
             !Nickel.v2d.eq(this.sprite.get_pos(), this._limb_history.pos) ||
-            !Nickel.v2d.eq(this._body_offset.pos, this._offset_history.pos))
+            !Nickel.v2d.eq(this._body_offset.pos, this._offset_history.pos) ||
+            !Nickel.v2d.eq(this.sprite.get_origin(), this._limb_history.pivot))
             this._limb_pos_changed = true;
         else
             this._limb_pos_changed = false;
@@ -117,15 +122,17 @@ class Limb {
         this._limb_history.pos = this.sprite.get_pos();
         this._limb_history.rot = this.sprite.get_rot();
         this._limb_history.siz = this.sprite.get_scale();
+        this._limb_history.pivot = this.sprite.get_origin();
         this._offset_history.pos = Nickel.v2d.copy(this._body_offset.pos);
         this._offset_history.rot = this._body_offset.rot;
         this._offset_history.siz = Nickel.v2d.copy(this._body_offset.siz);
     }
 
     /**
-     * @todo docs
+     * Updates the relative (to self's body/parent) position, rotation, and scale
+     * based on the results of the _check_changes function.
      */
-    _update_limb() {
+    _update_sprite() {
 
         // if root, locked offsets should directly affect sprite
         if (!this._limb_node.parent) {
@@ -173,33 +180,6 @@ class Limb {
                 this.sprite.set_scale2(new_scale[0], new_scale[1]);
             }
         }
-    }
-
-    /**
-     * @todo docs
-     */
-    _handle_transform() {
-
-        this._check_changes();
-        this._update_limb();
-        for (let child of this._limb_node.children)
-            child.obj._handle_transform();
-    }
-
-    /**
-     * @todo docs
-     */
-    _handle_sprite() {
-
-        for (let child of this._limb_node.children)
-            if (!child.obj._overlaps_body)
-                child.obj._handle_sprite();
-
-        this.sprite.update();
-        
-        for (let child of this._limb_node.children)
-            if (child.obj._overlaps_body)
-                child.obj._handle_sprite();
     }
 
     /**
@@ -253,18 +233,37 @@ class Limb {
     }
 
     /**
-     * Main update function: handles transformations and sprites.
+     * Recursive update function. Calls updates based on which limb
+     * is over/under. Update order: unders, this, overs.
      */
-    update() {
+    update_recursive() {
 
         if (this._disabled) return;
-        this._handle_transform();
-        this._handle_sprite();
+        this._check_changes();
+        this._update_sprite();
+
+        for (let child of this._limb_node.children)
+            if (!child.obj._overlaps_body)
+                child.obj.update_recursive();
+
+        this.update();
+
+        for (let child of this._limb_node.children)
+            if (child.obj._overlaps_body)
+                child.obj.update_recursive();
     }
 
     /**
-     * @todo utilize data inside of '_olocks' in '_update_limb'
-     * @todo HERE!!!!! ... <- are these issues resolved???
+     * Main update function. Meant to be extended.
+     */
+    update() {
+
+        this.sprite.update();
+    }
+
+    /**
+     * @todo utilize data inside of '_olocks' in '_update_sprite'
+     * @todo HERE!!!!! ... <- are the above issues resolved???
      * 
      * Locks the tagged transfomation to the body offset. Can
      * update current transformation as the body offset.
@@ -392,9 +391,10 @@ class Limb {
      * or even a Grid.
      * 
      * @param {Number[]} body_pt 
+     * @param {Boolean} self If set, this will be the world and the body_pt will be the origin point
      * @returns {Number[]} point in world (body's domain/body's parent)
      */
-    get_world_pt(body_pt) {
+    get_world_pt(body_pt, self=false) {
 
         // create new var to not disturb input value
         var world_pt = [body_pt[0], body_pt[1]];
@@ -403,7 +403,7 @@ class Limb {
         if (!this._limb_node.parent) return world_pt;
 
         // rotation vars
-        var body = this._limb_node.parent.obj.sprite;
+        var body = self ? this.sprite : this._limb_node.parent.obj.sprite;
         var rad = body.get_rot() * Math.PI / 180 * -1;
         var cos = Math.cos(rad);
         var sin = Math.sin(rad);
@@ -423,7 +423,8 @@ class Limb {
         world_pt = Nickel.v2d.add(world_pt, body.get_origin());
 
         // apply origin offset of limb sprite (in opposite direction)
-        world_pt = Nickel.v2d.sub(world_pt, this.sprite.get_origin());
+        if (!self)
+            world_pt = Nickel.v2d.sub(world_pt, this.sprite.get_origin());
 
         // return point in the domain of this limb's parent
         return world_pt;
@@ -508,6 +509,18 @@ class Limb {
     }
 
     /**
+     * Returns the parent Limb or null if no parent.
+     * 
+     * @returns {Limb[]|null} parent Limb
+     */
+    parent() {
+
+        if (this._limb_node.parent)
+            return this._limb_node.parent.obj;
+        return null;
+    }
+
+    /**
      * Returns a new list of child Limbs
      * 
      * @returns {Limb[]} list of Limbs
@@ -518,6 +531,16 @@ class Limb {
         for (let child_node of this._limb_node.children)
             children.push(child_node.obj);
         return children;
+    }
+
+    /**
+     * Returns a specific child limb.
+     * 
+     * @returns {Limb} Limb
+     */
+    nth_child(n) {
+
+        return this._limb_node.children[n].obj;
     }
 
     /**
@@ -571,7 +594,7 @@ class Limb {
     copy() {
 
         // new Limb
-        var copied = new Limb(this.sprite.scene, null, null, this.overlap, this._body_offset, false);
+        var copied = new Limb(this.sprite.scene, false, false, this.overlap, this._body_offset, false);
         copied.sprite = this.sprite.copy_frozen();
         copied.sprite.update_before = () => {};
         copied.sprite.update_more = () => {};
@@ -579,6 +602,7 @@ class Limb {
         copied._olocks.rot = this._olocks.rot;
         copied._olocks.siz = this._olocks.siz;
         copied.actor = this.actor;
+        copied.enable();
         
         return copied;
     }
@@ -640,17 +664,19 @@ class Limb {
     set_sprite(scene, img_data, collidable=false, is_loco=false, pivot=false, off_pos=false, off_rot=false, off_siz=false) {
         
         // existing sprite, new image
+        this.img_data = img_data;
         if (this.sprite)
             return this.set_image(img_data, pivot, off_pos, off_rot, off_siz);
 
         // new sprite
         this.sprite = new Sprite(scene, img_data, true, null, collidable);
         this.sprite.bound = () => {};
-        if (!pivot) this.sprite.set_origin_centered();
-        else if (pivot) this.sprite.set_origin(pivot);
+        if (pivot) this.sprite.set_origin(pivot);
+        else this.sprite.set_origin_centered();
+        this.sprite.hull.recalibrate();
         if (is_loco) this.sprite = new Locomotive({sprite: this.sprite});
         if (off_pos) this._body_offset.pos = Nickel.v2d.copy(off_pos);
-        if (off_rot || off_rot === 0) this._body_offset.rot = Nickel.v2d.copy(off_rot);
+        if (off_rot || off_rot === 0) this._body_offset.rot = off_rot;
         if (off_siz) this._body_offset.siz = Nickel.v2d.copy(off_siz);
     }
 
@@ -664,11 +690,13 @@ class Limb {
      */
     set_image(img_data, origin=false, off_pos=false, off_rot=false, off_siz=false) {
 
+        this.img_data = img_data;
         this.sprite.set_pic(img_data);
         if (origin === true) this.sprite.set_origin_centered();
         else if (origin) this.sprite.set_origin(Nickel.v2d.copy(origin));
+        if (origin) this.sprite.hull.recalibrate();
         if (off_pos) this._body_offset.pos = Nickel.v2d.copy(off_pos);
-        if (off_rot || off_rot === 0) this._body_offset.rot = Nickel.v2d.copy(off_rot);
+        if (off_rot || off_rot === 0) this._body_offset.rot = off_rot;
         if (off_siz) this._body_offset.siz = Nickel.v2d.copy(off_siz);
     }
 
@@ -708,6 +736,100 @@ class Limb {
     }
 
     /**
+     * Deletes and destroys self.
+     * 
+     * @param {Boolean} mark_sprite_as_dead underlying sprite be marked as dead? Otherwise will be destroyed
+     */
+    destroy(mark_sprite_as_dead=true) {
+
+        // destroy or mark sprite dead
+        if (this.sprite) {
+            if (mark_sprite_as_dead)
+                this.sprite.mark_dead();
+            else {
+                this.sprite.destroy();
+                this.sprite = null;
+            }
+        }
+
+        // delete and disable self and return
+        this._limb_node.delete();
+        this.disable();
+    }
+
+    /**
+     * Returns this limb's and all its child limbs by group
+     * in an object of the format:
+     *      groups = {
+     *          'group-a' : [...list of Limbs...],
+     *          'group-b' : [...list of Limbs...],
+     *          etc...
+     *      }
+     * 
+     * * note: if a Limb has a falsey group, the Limb will not be added
+     * 
+     * @param {object} groups 
+     * @returns {object} grouped Limbs
+     */
+    get_grouped_limbs(groups={}) {
+
+        // collect
+        if (this._group) {
+            if (groups[this._group])
+                groups[this._group].push(this);
+            else
+                groups[this._group] = [this];
+        }
+
+        // children
+        for (let child_node of this._limb_node.children)
+            child_node.obj.get_grouped_limbs(groups);
+
+        // return
+        return groups;
+    }
+
+    /**
+     * Flips the Limb horizontally with its origin and its
+     * keypoints unless otherwise specified.
+     * 
+     * @param {Boolean} flip_keypoints 
+     */
+    flip_h(flip_keypoints=true) {
+
+        this.sprite.flip_h(flip_keypoints);
+        if (flip_keypoints)
+            for (var key in this._keypoints)
+                this._keypoints[key][0] *= -1;
+    }
+
+    /**
+     * Flips the Limb vertically with its origin and its
+     * keypoints unless otherwise specified.
+     * 
+     * @param {Boolean} flip_keypoints 
+     */
+    flip_v(flip_keypoints=true) {
+
+        this.sprite.flip_v(flip_keypoints);
+        if (flip_keypoints)
+            for (var key in this._keypoints)
+                this._keypoints[key][1] *= -1;
+    }
+
+    /**
+     * Set or get keypoint.
+     * 
+     * @param {String} key name of keypoint
+     * @param {Number[]|null} point point of keypoint
+     */
+    key_pt(key, point=null) {
+
+        if (point) this._keypoints[key] = point;
+        else return this._keypoints[key];
+    }
+
+    /**
      * The parent limb_node of this limb, otherwise known as
      * the node of the body containing this limb.
      * 
@@ -722,6 +844,14 @@ class Limb {
      * @type {TreeNode} contains the parent Limb object
      */
     get body () { return this._limb_node.parent ? this._limb_node.parent.obj : null; }
+
+    /**
+     * The collision group this limb belongs to.
+     * 
+     * @type {String} group name
+     */
+    get group () { return this._group; }
+    set group (name) { this._group = name; }
 
     /**
      * Wether this limb will overlap its parent or not.
@@ -764,6 +894,14 @@ class Limb {
     set offset_scale (siz) { this._body_offset.siz = siz; }
 
     /**
+     * The pivot point of this limb.
+     * 
+     * @type {Number[2]} pivot point of this limb.
+     */
+    get pivot () { return this.sprite.get_origin(); }
+    set pivot (pt) { this.sprite.set_origin(pt); }
+
+    /**
      * Has the limb stopped updating or not.
      * 
      * @type {Boolean} disabled or not.
@@ -771,6 +909,20 @@ class Limb {
     get disabled () { return this._disabled; }
     disable () { this._disabled = true; }
     enable () { this._disabled = false; }
+
+    /**
+     * Is the limb collidable or not.
+     * 
+     * @type {Boolean} collidable or not
+     */
+    get collidable () { return this._collidable; }
+    set collidable (bool) {
+        this._collidable = bool;
+        if (this._collidable && !this.sprite.hull) {
+            console.error('ERROR: Limb>set collidable: sprite does not have a hull so limb cannot be collidable.');
+            this._collidable = false;
+        }
+    }
 
     /// (Private) Is the limb updating or not.
     _disabled = false;
@@ -782,7 +934,8 @@ class Limb {
     _limb_history = {
         pos : [0,0],
         rot : 0,
-        siz : [1,1]
+        siz : [1,1],
+        pivot : [0,0]
     }
 
     /// (Private) Offsets relative to this limb's body.
@@ -826,6 +979,21 @@ class Limb {
         siz : true
     };
 
+    /// (Private) Used for collision checking in Actor via Skeleton.
+    _group;
+
+    /// (Private) List of key points relative to the limb's origin.
+    /// These points are manipulated primarily when flipping the sprite.
+    /// Format: {
+    ///     key-point-name : [offset-from-ox, offset-from-oy],
+    ///     key-point-name : [offset-from-ox, offset-from-oy],
+    ///     etc...
+    /// }
+    _keypoints = {};
+
+    /// (Private) indicates if this limb is collidable
+    _collidable = true;
+
     /// id of object
     id = Nickel.UTILITY.assign_id();
 
@@ -834,6 +1002,10 @@ class Limb {
 
     /// Main actor of limb (can be any type of Actor)
     /// Expected to be set when issuing a skeleton (that contins this limb) to an actor
+    /// Or when equipping/unequipping
     actor;
+
+    /// Image data this limb was initialized with.
+    img_data;
 
 }//end Limb

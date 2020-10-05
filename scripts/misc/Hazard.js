@@ -18,16 +18,16 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+import { Bullet } from "../projectiles/Bullet.js";
+
 export { Hazard };
 
 /**
- * @todo: must have sprite, must be collidable (so use quadtree), must have the 4 basic events, must have a condition for initiating combat...
- * 
  * @class Hazard
  * 
- * Hazards are like weapons except they are simply sprites.
+ * Hazards are like bullets but typically will not have any kind of movement.
  */
-class Hazard {
+class Hazard extends Bullet {
 
     /**
      * Default constructor.
@@ -40,6 +40,80 @@ class Hazard {
         this._effects = effects;
     }
 
+    /**
+     * Static function: Triggers events based on current state of hazards.
+     * Must be called at regular intervals (ex: 60 times per second i.e. 60fps).
+     */
+    static handle_triggers() {
+
+        // handle Hazard-specific triggers
+        // ...
+    }
+
+    /**
+     * Static function: removes all targets, projectiles, and their
+     * quadtree for a certian group. Does not trigger delete event by
+     * default. Does not internally destroy projectiles by default. (i.e. internals may still exist if referenced)
+     * * note: will delete non-Hazard projectiles in the given group
+     * 
+     * @param {String} group group id of targets
+     * @param {Boolean} [trigger=false] trigger delete events and destroy internally
+     */
+    static delete_group(group, trigger=false) {
+
+        // delete from bullet list
+        Bullet.delete_group(group, trigger);
+
+        // delete hazard list
+        delete Hazard._p_hazards[group];
+    }
+
+    /**
+     * Static function: removes all destroyed hazards ONLY. Also
+     * removes empty groups. Does not trigger delete events at all.
+     * note: underlying projectiles still remain in Projectiles class.
+     *       Call Projectile.delete_destroyed to remove them.
+     */
+    static delete_destroyed() {
+
+        // delete from this class
+        var ps = Hazard._p_hazards;
+
+        // remove empty groups
+        for (var i in ps) 
+            if (!ps[i] || !ps[i].length)
+                delete ps[i];
+        
+        // remove dead objects
+        for (var g in ps)
+            ps[g] = ps[g].filter(p => p && p._state != Projectile.DESTROYED);
+    }
+    
+    /**
+     * Static property: Number of hazards.
+     * (includes destroyed, excludes deleted)
+     * 
+     * @type {Number} hazard count
+     */
+    static get count() {
+        var c = 0;
+        for (var g in this._p_hazards)
+            c += this._p_hazards[g].length;
+        return c;
+    }
+
+    /**
+     * @overrides parent class function.
+     * Resets all static data to the default values.
+     * If deep is false, then do not reset parent class.
+     */
+    static reset(deep=true) {
+
+        if (deep) Bullet.reset();
+        Hazard._p_hazards = {};
+    }
+
+    static _p_hazards = {};
     _dmg_normal; // damage to armor, then health
     _dmg_pierce; // damage to health only
     _dmg_break; // damage to armor only

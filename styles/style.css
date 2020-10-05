@@ -66,3 +66,155 @@
     border-bottom-width: 0;
     margin-top: 0.35em;
 }
+
+.dk-dark {
+    background-color: #202020;
+    color: rgb(219, 88, 0);
+    font-family: Montserrat, Courier, sans-serif;
+    min-width: 130px;
+}
+
+.dk-light {
+    background-color: #ebebeb;
+    color: rgb(219, 88, 0);
+    font-family: Montserrat, Courier, sans-serif;
+    min-width: 130px;
+}
+
+.dk-btn {
+    background-color: #5e5e5e;
+    color: rgb(219, 88, 0);
+    font-family: Montserrat, Courier, sans-serif;
+    min-width: 130px;
+}
+
+.dk-btn-span {
+    background-color: #202020;
+    color: rgb(219, 88, 0);
+    font-family: Montserrat, Courier, sans-serif;
+    display: inline-block;
+    min-width: 130px;
+    padding: 4px;
+}
+
+.dk-btn-span-2 {
+    background-color: #236b88;
+    color: rgb(255, 255, 255);
+    font-family: Montserrat, Courier, sans-serif;
+    display: inline-block;
+    min-width: 130px;
+    padding: 4px;
+}
+
+.dk-btn-span-3 {
+    background-color: #5cb850;
+    color: rgb(255, 255, 255);
+    font-family: Montserrat, Courier, sans-serif;
+    display: inline-block;
+    min-width: 130px;
+    font-weight: bold;
+    padding: 4px;
+}
+
+.dk-header {
+    font-size: 1.75em;
+    background-color: #202020;
+    color: rgb(219, 88, 0);
+    font-family: Montserrat, Courier, sans-serif;
+    font-weight: bold;
+    text-decoration: none;
+    padding-top: 1%;
+    padding-bottom: 1%;
+    overflow: hidden;
+    z-index: 2;
+    position: sticky;
+    width: 80%;
+}
+
+.dk-normal {
+    font-size: 1.0em;
+    background-color: #202020;
+    color: rgb(219, 88, 0);
+    font-family: Montserrat, Courier, sans-serif;
+}
+
+.dk-small {
+    font-size: 0.25em;
+    background-color: #202020;
+    color: rgb(219, 88, 0);
+    font-family: Montserrat, Courier, sans-serif;
+}
+
+.dk-ctr {
+    text-align: center;
+}
+
+.dk-mid {
+    vertical-align: middle;
+}
+
+.dk-tray {
+    display: inline-block;
+    min-height: 40px;
+    background-color: #ebebeb;
+    color: rgb(206, 206, 206);
+    font-family: Courier, Verdana;
+
+    padding: 20px;
+    margin: 10px;
+    font-size: 1.5em;
+    font-weight: normal;
+    line-height: 1.3em;
+    border: 2px dashed rgb(211, 186, 169);
+    border-radius: 10px;
+    box-shadow: 0 0 0 4px #ebebeb, 2px 1px 6px 4px rgba(10, 10, 0, 0.5);
+}
+
+.dk-tray div {
+    transform: translateY(5%);
+}
+
+.dk-tray:hover {
+    background-color: #fffecd;
+    box-shadow: 0 0 0 4px #fffecd, 4px 2px 12px 8px rgba(10, 10, 0, 0.5);
+    border: 2px dashed rgb(206, 206, 206);
+    cursor: pointer;
+}
+
+.dk-inline {
+    display: inline-block
+}
+
+.dk-rnav {
+    height: 100%;
+    width: 20%;
+    position: fixed;
+    z-index: 2;
+    top: 0px;
+    right: 0;
+    background-color: #ebebeb;
+    overflow-x: hidden;
+    padding: 8px 8px;
+    padding-top: 80px;
+}
+
+.dk-rnav div,span {
+    padding: 6px 8px 6px 16px;
+    text-decoration: none;
+    font-size: 25px;
+    color: #818181;
+    display: block;
+}
+
+.dk-main-rnav {
+    margin-right: 20%; /* Same as the width of the sidenav */
+    padding: 0px 8px;
+}
+
+.dk-active {
+    background-color: gold;
+}
+
+.dk-copy {
+    float: right;
+}

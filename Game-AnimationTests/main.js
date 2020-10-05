@@ -28,7 +28,7 @@ import { GameLoop, InitGame } from '../scripts/update.js';
 import { Limb } from '../scripts/Limb.js';
 import { Skeleton } from '../scripts/Skeleton.js';
 import { Actor } from '../scripts/Actor.js';
-import { NecronWarrior } from '../scripts/actors/NecronWarrior.js';
+import { NecronWarrior } from '../scripts/actors/necrons/NecronWarrior.js';
 import { Bullet } from '../scripts/projectiles/Bullet.js';
 import { GameManager } from '../scripts/managers/GameManager.js';
 
@@ -86,9 +86,14 @@ InitGame.does = () => {
 
     akNecron = new NecronWarrior('necrons', 'A');
     akNecron.position = [75,175];
-    if (Game.key_upped == Nickel.KEYCODES.SPACE) {
-        akNecron.shoot();
-    }
+
+    // junk
+    //Nickel.GLOBALS.Game = Game;
+    //Nickel.GLOBALS.akNecron = akNecron;
+    //Nickel.GLOBALS.akTest = akTest;
+    //Nickel.GLOBALS.akTest2 = akTest2;
+    //Nickel.GLOBALS.Actor = Actor;
+    //Nickel.GLOBALS.Bullet = Bullet;
 }
 
 // Game Loop:
@@ -96,8 +101,8 @@ GameLoop.does = () => {
 
     Game.clear();
 
-    //akTest.update();
-    //akTest2.update();
+    akTest.update();
+    akTest2.update();
     akNecron.update();
 
     Actor.handle_triggers(); // should be taken care of in GameManager

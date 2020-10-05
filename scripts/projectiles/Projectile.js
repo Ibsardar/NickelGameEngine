@@ -20,6 +20,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+import { CollisionEventHandler } from "../CollisionEventHandler.js";
+
 export { Projectile };
 
 /**
@@ -105,6 +107,15 @@ class Projectile {
         if (pdata.on_destroyed) this.on('destroy', pdata.on_destroyed);
         if (pdata.on_delete) this.on('delete', pdata.on_delete);
 
+        // increment created count
+        Projectile._count++
+        if (Projectile._counts[pdata.group])
+            Projectile._counts[pdata.group]++;
+        else {
+            Projectile._counts[pdata.group] = 1;
+            Projectile._dead_counts[pdata.group] = 0;
+        }
+
         // trigger create event
         this._state = Projectile.INITIALIZED;
     }
@@ -114,7 +125,7 @@ class Projectile {
      * Projectile object.
      * 
      * @param  {Projectile} projectile
-     * @param  {Object} bounds
+     * @param  {left:0, right:0, top:0, bottom:0} bounds
      */
     static set_bounds(projectile, bounds) {
 
@@ -155,6 +166,10 @@ class Projectile {
      */
     static delete_group(group, trigger=false) {
 
+        // decrement counts
+        Projectile._count -= Projectile._counts[group];
+        Projectile._dead_count -= Projectile._dead_counts[group];
+
         // trigger delete event for each removed projectile
         if (trigger) {
             var gp = Projectile._projectiles[group];
@@ -167,34 +182,46 @@ class Projectile {
         delete Projectile._targets[group];
         delete Projectile._projectiles[group];
         delete Projectile._quadtrees[group];
+        delete Projectile._counts[group];
+        delete Projectile._dead_counts[group];
     }
 
     /**
-     * Static function: removes all destroyed projectiles. Does
-     * not remove empty groups. Does not trigger delete event by
-     * default.
+     * Static function: removes all destroyed projectiles. Doesn't
+     * remove empty groups. Does not trigger delete event by
+     * default. DOES remove falsey indices in lists.
      * 
      * @param {Boolean} [trigger=false] trigger delete events
      */
     static delete_destroyed(trigger=false) {
 
+        var ps = Projectile._projectiles;
+
         // for each destroyed projectile in all groups:
         // - trigger delete if trigger=true
         // - remove from list
-        var ps = Projectile._projectiles;
         for (var g in ps) {
             if (trigger) {
-                ps[g] = ps[g].filter(function(p){
+                ps[g] = ps[g].filter(p => {
+                    if (!p) return false;
                     if (p._state == Projectile.DESTROYED) {
+                        Projectile._dead_count--;
+                        Projectile._dead_counts[g]--;
                         p.trigger('delete', p);
                         return false;
                     } else
                         return true;
                 });
             } else {
-                ps[g] = ps[g].filter(p =>
-                    p._state != Projectile.DESTROYED
-                );
+                ps[g] = ps[g].filter(p => {
+                    if (!p) return false;
+                    if (p._state == Projectile.DESTROYED) {
+                        Projectile._dead_count--;
+                        Projectile._dead_counts[g]--;
+                        return false;
+                    } else
+                        return true;
+                });
             }
         }
     }
@@ -243,7 +270,7 @@ class Projectile {
             qs[g].clear();
             for (var i in ps[g]) {
                 var p = ps[g][i];
-                if (p._state != Projectile.DESTROYED) {
+                if (p._state != Projectile.DESTROYED && p.collidable) {
                     qs[g].in(p,
                         [p.sprite.get_left(), p.sprite.get_top()],
                         [p.sprite.get_w_bound(), p.sprite.get_h_bound()]
@@ -252,6 +279,11 @@ class Projectile {
             }
         }
 
+        // check if projectiles are hitting targets from same group
+        // * note: ignore all destroyed targets *
+        CollisionEventHandler.handle(Projectile, Projectile._targets, qs, ['sprite'], []);
+
+        /***
         // check if projectiles are hitting targets from same group
         // * note: ignore all destroyed targets *
         var ts = Projectile._targets;
@@ -299,7 +331,7 @@ class Projectile {
                         qt_list[j].entity.trigger('hit', qt_list[j].entity, t);
                 }
             }
-        }
+        }***/
     }
 
     /**
@@ -312,6 +344,10 @@ class Projectile {
         for (var g in ps) {
             for (var i in ps[g]) {
                 if (ps[g][i].sprite.is_destroyed() && ps[g][i]._state != Projectile.DESTROYED) {
+                    Projectile._count--;
+                    Projectile._dead_count++;
+                    Projectile._counts[g]--;
+                    Projectile._dead_counts[g]++;
                     ps[g][i]._state = Projectile.DESTROYED;
                     ps[g][i].trigger('destroy', ps[g][i]);
                 }
@@ -330,6 +366,91 @@ class Projectile {
     }
 
     /**
+     * Creates an empty group.
+     * 
+     * @param {String} g name of group
+     */
+    static create_group(g) {
+
+        Projectile._targets[g] = [];
+        Projectile._qt_bounds.w = Projectile._scene.get_w();
+        Projectile._qt_bounds.h = Projectile._scene.get_h();
+        Projectile._quadtrees[g] = new QuadTree(
+            Projectile._qt_max_objs,
+            Projectile._qt_max_depth,
+            Projectile._qt_bounds
+        );
+        Projectile._projectiles[g] = [this];
+        Projectile._counts[g] = 0;
+        Projectile._dead_counts[g] = 0;
+    }
+
+    /**
+     * True if any trace of a group exists. If non-existent, false.
+     * 
+     * @param {String} g name of group
+     */
+    static group_exists(g) {
+
+        if (!Projectile._targets[g] ||
+            !Projectile._quadtrees[g] ||
+            !Projectile._projectiles[g] ||
+            !Projectile._counts[g] ||
+            !Projectile._dead_counts[g]) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Static function: Transfers a projectile from its existing group to a new group.
+     * (excludes destroyed, excludes deleted)
+     * 
+     * @param  {Projectile} p projectile object that wants to change group
+     * @param  {String} g group to change to
+     */
+    static change_group(p, g) {
+        
+        if (Projectile.remove_from_group(p)) {
+            if (!Projectile.group_exists(g))
+                Projectile.create_group(g);
+            Projectile._projectiles[g].push(p);
+            Projectile._count++;
+            Projectile._counts[g]++;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Static function: Removes a projectile from its existing group
+     * without triggering any delete/destroy triggers.
+     * (excludes destroyed, excludes deleted)
+     * 
+     * @param  {Projectile} p projectile object that wants to change group
+     * @returns false if not found or projectile is destroyed, else true
+     */
+    static remove_from_group(p) {
+
+        // ignore dead
+        if (p._state >= Projectile.DESTROYED)
+            return false;
+        
+        var oldg = p.group;
+        p.group = null;
+        for (var i in Projectile._projectiles[oldg]) {
+            var oldp = Projectile._projectiles[oldg][i];
+            if (oldp.sprite.id == p.sprite.id) {
+                Projectile._projectiles[oldg].splice(i, 1);
+                Projectile._count--;
+                Projectile._counts[oldg]--;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Static function: Get entire list of projectiles from a certain group.
      * (includes destroyed, excludes deleted)
      * 
@@ -339,18 +460,101 @@ class Projectile {
     static get_group(g) {
         return Projectile._projectiles[g];
     }
-    
+
     /**
-     * Static property: Number of projectiles.
-     * (includes destroyed, excludes deleted)
-     * 
-     * @type {Number} projectile count
+    * Number of groups.
+    * (includes empty groups)
+    * 
+    * @type {Number} group count
+    */
+    static get number_of_groups() { return Object.keys(Projectile._projectiles).length; }
+
+    /**
+    * Number of projectiles in all groups.
+    * (excludes destroyed)
+    * 
+    * @type {Number} projectile count
+    */
+    static get count() { return Projectile._count; }
+
+    /**
+    * Number of destroyed projectiles in all groups.
+    * 
+    * @type {Number} projectile count
+    */
+    static get dead_count() { return Projectile._dead_count; }
+
+    /**
+    * Number of projectiles in a certain group.
+    * (excludes destroyed)
+    * 
+    * @param {Number} group
+    */
+    static group_count(group) { return Projectile._counts[group]; }
+
+    /**
+    * Number of dead projectiles in a certain group.
+    * 
+    * @param {Number} group
+    */
+    static group_dead_count(group) { return Projectile._dead_counts[group]; }
+
+    /**
+     * Static: Calls 'update' on all projectiles.
+     * (excludes deleted, optionally includes destroyed)
      */
-    static get count() {
-        var c = 0;
-        for (var g in Projectile._projectiles)
-            c += Projectile._projectiles[g].length;
-        return c;
+    static update_all(update_destroyed=false) {
+
+        for (var h in Projectile._projectiles) {
+            var g = Projectile._projectiles[h];
+            for (var i in g) {
+                var p = g[i];
+                if (p) {
+                    if (p._state != Projectile.DESTROYED || update_destroyed)
+                        p.update();
+                }
+            }
+        }
+    }
+
+    /**
+     * Static: Calls 'update' on all projectiles EXCEPT
+     * groups specified in the groups list parameter..
+     * (excludes deleted, optionally includes destroyed)
+     */
+    static update_except(groups=[], update_destroyed=false) {
+
+        for (var h in Projectile._projectiles) {
+            if (groups.find(h)) continue;
+            var g = Projectile._projectiles[h];
+            for (var i in g) {
+                var p = g[i];
+                if (p) {
+                    if (p._state != Projectile.DESTROYED || update_destroyed)
+                        p.update();
+                }
+            }
+        }
+    }
+
+    /**
+     * Static: Calls 'update' on all projectiles EXCEPT
+     * groups NOT specified in the groups list parameter..
+     * (excludes deleted, optionally includes destroyed)
+     */
+    static update_only(groups=[], update_destroyed=false) {
+
+        for (let h of groups) {
+            var g = Projectile._projectiles[h];
+            if (!g) continue;
+            for (var i in g) {
+                var p = g[i];
+                if (p) {
+                    if (p._state != Projectile.DESTROYED || update_destroyed)
+                        p.update();
+                }
+            }
+        }
     }
 
     /**
@@ -457,6 +661,29 @@ class Projectile {
     }
 
     /**
+     * Resets all static data to the default values.
+     */
+    static reset() {
+        
+        Projectile._scene = null;
+        Projectile._targets = {};
+        Projectile._projectiles = {};
+        Projectile._quadtrees = {};
+        Projectile._qt_bounds = {
+            x : 0,
+            y : 0,
+            w : 0,
+            h : 0
+        };
+        Projectile._qt_max_objs = 3;
+        Projectile._qt_max_depth = 4;
+        Projectile._count = 0;
+        Projectile._dead_count = 0;
+        Projectile._counts = {};
+        Projectile._dead_counts = {};
+    }
+
+    /**
      * Coordinates of the bullet's center.
      * 
      * @type {Number[]} cx,cy coordinates
@@ -503,6 +730,20 @@ class Projectile {
      */
     get scale() { return this.sprite.get_scale(); }
     set scale(s) { this.sprite.set_scale2(s[0], s[1]); }
+    
+    /**
+     * Is the projectile collidable or not.
+     * 
+     * @type {Boolean} collidable or not
+     */
+    get collidable () { return this._collidable; }
+    set collidable (bool) {
+        this._collidable = bool;
+        if (this._collidable && !this.sprite.hull) {
+            console.error('ERROR: Projectile>set collidable: sprite does not have a hull so projectile cannot be collidable.');
+            this._collidable = false;
+        }
+    }
 
     /// (Static Constant) Projectile states.
     static get WAITING_INIT ()  { return 0; }
@@ -552,6 +793,12 @@ class Projectile {
     /// (Private Static) Quadtree max tree depth.
     static _qt_max_depth = 4;
 
+    /// (Static Private) Projectile count tracking
+    static _count = 0;
+    static _dead_count = 0;
+    static _dead_counts = {}; // format same as _projectiles
+    static _counts = {}; // format same as _projectiles
+
     /// (Private) State of projectile. Based partially on events
     /// that have been handelled.
     _state = 0;
@@ -572,10 +819,13 @@ class Projectile {
         delete : new Queue()
     }
 
+    /// (Private) indicates if this projectile is collidable
+    _collidable = true;
+
     /// Main sprite object of bullet.
     sprite;
 
-    /// Group this bullet belongs to.
+    /// Group this projectile belongs to.
     group;
 
     /// Combat variables

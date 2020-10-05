@@ -1122,6 +1122,7 @@ var GridBuilder = {
         grid.sdata = grid_data.zoom_data;
         grid.limits_orig = grid_data.limit_data;
         grid.ndata = grid_data.navmesh_data;
+        grid.ddata = grid_data.renderer_enabled; // new addition (boolean)
 
         // copy limits
         if (grid.limits_orig)
@@ -1300,12 +1301,18 @@ var GridBuilder = {
         // setters
         grid.load_sprite = function(spr) {this.load.push(spr);}
         grid.load_sprites = function(sprs) {this.load.push(...sprs);}
+        grid.load_updater = grid.load_sprite; // alias
+        grid.load_updaters = grid.load_sprites; // alias
         grid.empty_load = function() {this.load = [];}
         grid.reset_transform = function() {this.transform = {
             x  : 0,  y : 0, // translation
             sx : 1, sy : 1, // scale
             ang : 0         // rotation (degs)
         }}
+
+        // updates render stack (built seperately, empty by default)
+        grid.render_update = () => {};
+        grid.has_render_stack = false;
 
         // Efficient Transformation Algorithm:
         // - save current canvas to 'pre_grid_canvas'
@@ -1334,7 +1341,10 @@ var GridBuilder = {
                 }
             }
 
-            // loaded sprites
+            // render stack (does nothing by default)
+            grid.render_update();
+
+            // loaded sprites/updaters
             for (var i in grid.load) {
                 grid.load[i].update();
             }
@@ -1348,11 +1358,11 @@ var GridBuilder = {
             // rect
             grid.update_rect();
 
-            // update extra custom script
-            grid.update_more();
-
             // apply transformations and draw grid
             grid.draw();
+
+            // update extra custom script
+            grid.update_more();
         }
 
         // applies an extra script to pre-frame updates
@@ -1434,6 +1444,7 @@ var GridBuilder = {
         if (grid.sdata) GridBuilder.build_scaler(grid);
         if (grid.limits) GridBuilder.build_limiter(grid);
         if (grid.ndata) GridBuilder.build_navmesh(grid);
+        if (grid.ddata) GridBuilder.build_render_stack(grid);
     }
 
     ,
@@ -1766,6 +1777,171 @@ var GridBuilder = {
         grid.nav = NavBuilder.create_navmesh(grid, grid.ndata);
     }
 
+    ,
+
+    build_render_stack : function(grid) {
+
+        // priority queue of priority queues of lists of objects
+        // format:
+        //   "stack"            PQ: <
+        //   "step"                  layer~PQ: <
+        //   "load"                      sub-layer~[obj,obj,...],
+        //   "load"                      sub-layer~[...],
+        //                               ...
+        //                           >,
+        //   "step"                  layer~PQ: <...>,
+        //                           ...
+        //                       >
+        grid.render_stack = new PriorityQueue();
+
+        // enable
+        grid.has_render_stack = true;
+        grid.render_update = () => {
+            if (grid.has_render_stack)
+                grid.renderer.stack.update();
+        };
+
+        // define structure
+        rs = grid.render_stack;
+        grid.renderer = {
+            on : () => grid.has_render_stack = true,
+            off : () => grid.has_render_stack = false,
+            stack : {
+                count : () => rs ? 1 : 0,
+                get : () => rs,
+                data : () => rs.data(),
+                dump : () => rs.dump(),
+                update : () => rs.each((step) => step.each((load) => load.forEach(obj => obj.update()))),
+                clear : () => rs.clear()
+            },
+            step : {
+                count : () => rs.count(),
+                get : (priority=null) => priority === null ? rs.data() : rs.at(priority),
+                data : (priority=null) => {
+                    var data = [];
+                    priority === null ?
+                        rs.each((step) => data = [...data, ...step.data()]) :
+                        rs.each_at(priority, (step) => data = [...data, ...step.data()])
+                    return data;
+                },
+                dump : (priority=null) => {
+                    var dump = [];
+                    priority === null ?
+                        rs.each((step) => dump = [...dump, ...step.dump()]) :
+                        rs.each_at(priority, (step) => dump = [...dump, ...step.dump()]);
+                    return dump;
+                },
+                update : (priority) => rs.each_at(priority, (step) => step.each((load) => load.forEach(obj => obj.update()))),
+                clear : (priority) => rs.each_at(priority, (step) => step.clear()),
+                add : (priority, sort_by = (a,b) => a > b) => rs.in(new PriorityQueue(sort_by), priority),
+            },
+            layer : {
+                count : (priority) => {
+                    var cnt = 0;
+                    rs.each_at(priority, (step) => cnt += step.count());
+                    return cnt;
+                },
+                total : () => {
+                    var cnt = 0;
+                    rs.each((step) => cnt += step.count());
+                    return cnt;
+                },
+                get : (priority=null, layer=null) => {
+                    var loads = [];
+                    if (priority === null && layer === null)
+                        rs.each((step) => step.each((load) => loads.push(load)));
+                    else if (priority === null)
+                        rs.each((step) => step.each_at(layer, (load) => loads.push(load)));
+                    else if (layer === null)
+                        rs.each_at(priority, (step) => step.each((load) => loads.push(load)));
+                    else
+                        rs.each_at(priority, (step) => step.each_at(layer, (load) => loads.push(load)));
+                    return loads;
+                },
+                update : (priority, layer) => rs.each_at(priority, (step) => step.each_at(layer, (load) => load.forEach(obj => obj.update()))),
+                clear : (priority, layer) => rs.each_at(priority, (step) => step.each_at(layer, (load) => load.length = 0)),
+                add : (priority, layer) => rs.first_at(priority, (step) => step.in([], layer))
+            },
+            obj : {
+                count : (priority, layer) => {
+                    var cnt = 0;
+                    rs.each_at(priority, (step) => step.each_at(layer, (load) => cnt += load.length));
+                    return cnt;
+                },
+                count2 : (priority) => {
+                    var cnt = 0;
+                    rs.each_at(priority, (step) => step.each((load) => cnt += load.length));
+                    return cnt;
+                },
+                total : () => {
+                    var cnt = 0;
+                    rs.each((step) => step.each((load) => cnt += load.length));
+                    return cnt;
+                },
+                get : (priority=null, layer=null) => {
+                    var loads = [];
+                    if (priority === null && layer === null)
+                        rs.each((step) => step.each((load) => loads = [...loads, ...load]));
+                    else if (priority === null)
+                        rs.each((step) => step.each_at(layer, (load) => loads = [...loads, ...load]));
+                    else if (layer === null)
+                        rs.each_at(priority, (step) => step.each((load) => loads = [...loads, ...load]));
+                    else
+                        rs.each_at(priority, (step) => step.each_at(layer, (load) => loads = [...loads, ...load]));
+                    return loads;
+                },
+                update : (priority, layer, index) => rs.each_at(priority, (step) => step.each_at(layer, (load) => load[index].update())),
+                rem : (priority, layer, obj, compare = (a,b) => a.id === b.id) => {
+                    var removed = null;
+                    rs.each_at(priority, (step) => step.each_at(layer, (load) => {
+                        for (var i in load)
+                            if (compare(obj,load[i])) {
+                                removed = load.splice(i,1)[0];
+                                break;
+                            }
+                    }, () => removed), () => removed) // <-- breaks when removed is truthy
+                    return removed;
+                },
+                rem2 : (priority, layer, index) => {
+                    var removed = null;
+                    rs.each_at(priority, (step) => step.each_at(layer, (load) => {
+                        for (var i in load)
+                            if (index == i) {
+                                removed = load.splice(i,1)[0];
+                                break;
+                            }
+                    }, () => removed), () => removed) // <-- breaks when removed is truthy
+                    return removed;
+                },
+                add : (priority, layer, obj) => {
+                    var i = -1;
+                    rs.first_at(priority, (step) => step.first_at(layer, (load) => i = load.push(obj) - 1))
+                    return i; // <-- index of added object
+                },
+                repl : (priority, layer, index, obj) => rs.first_at(priority, (step) => step.first_at(layer, (load) => load[index] = obj)),
+                change : (priority, from_layer, to_layer, obj, compare = (a,b) => a.id === b.id) => {
+                    grid.renderer.obj.rem(priority, from_layer, obj, compare) ?
+                        grid.renderer.obj.add(priority, to_layer, obj) :
+                        false; // <-- obj is not in from_layer (don't add it to to_layer)
+                },
+                audit : (priority, layer, obj, compare = (a,b) => a.id === b.id) => {
+                    var found = 0;
+                    rs.each_at(priority, (step) => step.each_at(layer, (load) => load.forEach((o) => compare(obj,o) ? found++ : null)));
+                    return found;
+                },
+                audit2 : (priority, obj, compare = (a,b) => a.id === b.id) => {
+                    var found = 0;
+                    rs.each_at(priority, (step) => step.each((load) => load.forEach((o) => compare(obj,o) ? found++ : null)));
+                    return found;
+                },
+                audit3 : (obj, compare = (a,b) => a.id === b.id) => {
+                    var found = 0;
+                    rs.each((step) => step.each((load) => load.forEach((o) => compare(obj,o) ? found++ : null)));
+                    return found;
+                }
+            }
+        }
+    }
 }//end grid builder
 
 
@@ -2041,6 +2217,7 @@ var NavNodeBuilder = {
             node.spr = new Sprite(node.data.grid.scene, node.data.spr_data, true);
             node.spr.bound = function() {};
             node.spr.set_origin_centered();
+            node.spr.hull.recalibrate();
             node.til = node.data.tile;
 
             node.update = function() {
@@ -2067,7 +2244,7 @@ var NavNodeBuilder = {
 ////////////////////////////////////////////
 ///   LOCOMOTIVE BUILDER   /////////////////
 ////////////////////////////////////////////
-/**@todo: make the implementations of each function static */
+/**@todo: make the implementations of each function static --> maybe convert to a Module */
 var LocomotiveBuilder = {
 
     create_locomotive : function(loco_data) {
@@ -3422,6 +3599,7 @@ var ParticleBuilder = {
         particle.sys = system;
         particle.funcs = []; // list of private behaviours
 
+        particle.collidable = false;
         particle.dead = false;
         particle.time_past = 0; // time past so far
         particle.time_start = Date.now();
@@ -3488,11 +3666,11 @@ var ParticleBuilder = {
             // update all movement
             particle.move();
 
-            // custom update
-            particle.update_more();
-
             // draws image of body
             particle.draw();
+
+            // custom update
+            particle.update_more();
         }
 
         // create draw function
@@ -3819,6 +3997,7 @@ var ParticleBuilder = {
                     ctx.imageSmoothingEnabled = system.scene.antialias;
                     
                     // fill
+                    //ctx.closePath(); // heyer
                     ctx.fill();
                 });
             }
@@ -3853,6 +4032,7 @@ var ParticleBuilder = {
                     ctx.imageSmoothingEnabled = system.scene.antialias;
                     
                     // stroke (borders only)
+                    //ctx.closePath(); // heyer
                     ctx.stroke();
                 });
             }
@@ -3922,27 +4102,6 @@ var ParticleSystemBuilder = {
 
         // create
         switch (data.type) {
-            case ParticleSystemBuilder.TYPES.FIRE:
-                ParticleSystemBuilder.create_fire(sys, data);
-                break;
-            case ParticleSystemBuilder.TYPES.WATER:
-                ParticleSystemBuilder.create_water(sys, data);
-                break;
-            case ParticleSystemBuilder.TYPES.SMOKE:
-                ParticleSystemBuilder.create_smoke(sys, data);
-                break;
-            case ParticleSystemBuilder.TYPES.JET:
-                ParticleSystemBuilder.create_jet(sys, data);
-                break;
-            case ParticleSystemBuilder.TYPES.EXPLOSION:
-                ParticleSystemBuilder.create_explosion(sys, data);
-                break;
-            case ParticleSystemBuilder.TYPES.SPIRAL:
-                ParticleSystemBuilder.create_spiral(sys, data);
-                break;
-            case ParticleSystemBuilder.TYPES.PULSE:
-                ParticleSystemBuilder.create_pulse(sys, data);
-                break;
             default:
                 ParticleSystemBuilder.create_custom(sys, data);
         }
@@ -4106,19 +4265,19 @@ var ParticleSystemBuilder = {
             ctx.imageSmoothingEnabled = sys.scene.antialias;
 
             ctx.translate(sys.pos[0], sys.pos[1]);
-            ctx.rotate(sys.rot);
-            ctx.scale(sys.scale[0], sys.scale[1]);
+            //ctx.rotate(sys.rot); // not working as expected
+            //ctx.scale(sys.scale[0], sys.scale[1]); // not working as expected
             // updates
             var _tmp_ptcs = sys.queue.data();
             for (var i in _tmp_ptcs)
                 _tmp_ptcs[i].update();
             ctx.restore();
 
-            // update custom add-ons
-            sys.update_more();
-
             // update image/transformations
             sys.draw();
+
+            // update custom add-ons
+            sys.update_more();
         }
 
         // create draw function
@@ -4211,56 +4370,5 @@ var ParticleSystemBuilder = {
         // create features of this system's particles
         var template_particle = new Particle(data.particle_data, sys);
         ParticleBuilder.create_features(template_particle, sys, data.particle_data);
-    },
-
-    // utilizes: Same as custom.
-    //
-    // does:     Same as custom, except the base particle data will be altered
-    //           to forcively match this type of particle system. User will
-    //           be able to override only some parameters of the particle data.
-    create_fire : function() {/*TODO*/},
-
-    // utilizes: Same as custom.
-    //
-    // does:     Same as custom, except the base particle data will be altered
-    //           to forcively match this type of particle system. User will
-    //           be able to override only some parameters of the particle data.
-    create_water : function() {/*TODO*/},
-
-    // utilizes: Same as custom.
-    //
-    // does:     Same as custom, except the base particle data will be altered
-    //           to forcively match this type of particle system. User will
-    //           be able to override only some parameters of the particle data.
-    create_smoke : function() {/*TODO*/},
-
-    // utilizes: Same as custom.
-    //
-    // does:     Same as custom, except the base particle data will be altered
-    //           to forcively match this type of particle system. User will
-    //           be able to override only some parameters of the particle data.
-    create_jet : function() {/*TODO*/},
-
-    // utilizes: Same as custom.
-    //
-    // does:     Same as custom, except the base particle data will be altered
-    //           to forcively match this type of particle system. User will
-    //           be able to override only some parameters of the particle data.
-    create_explosion : function() {/*TODO*/},
-
-    // utilizes: Same as custom.
-    //
-    // does:     Same as custom, except the base particle data will be altered
-    //           to forcively match this type of particle system. User will
-    //           be able to override only some parameters of the particle data.
-    create_spiral : function() {/*TODO*/},
-
-    // utilizes: Same as custom.
-    //
-    // does:     Same as custom, except the base particle data will be altered
-    //           to forcively match this type of particle system. User will
-    //           be able to override only some parameters of the particle data.
-    create_pulse : function() {/*TODO*/}
-
+    }
 }
-//*/

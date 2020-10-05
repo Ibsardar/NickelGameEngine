@@ -42,17 +42,21 @@ __nhelpers = {
     blur_rgb_image : function(i, r=6) { var c=document.createElement('canvas'); c.width=i.w; c.height=i.h; var t=new Image(i.w,i.h); t.src=i.img; c.getContext('2d').drawImage(t,0,0); StackBlur.canvasRGB(c,0,0,i.w,i.h,r); i.img=c.toDataURL(); return i; },
     blur_rgba_image : function(i, r=6) { var c=document.createElement('canvas'); c.width=i.w; c.height=i.h; var t=new Image(i.w,i.h); t.src=i.img; c.getContext('2d').drawImage(t,0,0); StackBlur.canvasRGBA(c,0,0,i.w,i.h,r); i.img=c.toDataURL(); return i; },
     get_blur_rgb_image : function(i, r=6) { var c=document.createElement('canvas'); c.width=i.w; c.height=i.h; var t=new Image(i.w,i.h); t.src=i.img; c.getContext('2d').drawImage(t,0,0); StackBlur.canvasRGB(c,0,0,i.w,i.h,r); return {w:i.w,h:i.h,img:c.toDataURL()}; },
-    get_blur_rgba_image : function(i, r=6) { var c=document.createElement('canvas'); c.width=i.w; c.height=i.h; var t=new Image(i.w,i.h); t.src=i.img; c.getContext('2d').drawImage(t,0,0); StackBlur.canvasRGBA(c,0,0,i.w,i.h,r); return {w:i.w,h:i.h,img:c.toDataURL()}; }
+    get_blur_rgba_image : function(i, r=6) { var c=document.createElement('canvas'); c.width=i.w; c.height=i.h; var t=new Image(i.w,i.h); t.src=i.img; c.getContext('2d').drawImage(t,0,0); StackBlur.canvasRGBA(c,0,0,i.w,i.h,r); return {w:i.w,h:i.h,img:c.toDataURL()}; },
+    init_globals : function(...gs) { var o = {}; for (s of gs) o[s] = null; Nickel.GLOBALS = {...Nickel.GLOBALS, ...o}; },
+    get_sub_prop : (struct=[], o={}, i=0) => struct[i] ? Nickel.util.subprop(struct, o[struct[i]], ++i) : o[struct[i]] !== undefined ? o[struct[i]] : o
 }
 var Nickel = {
 
     /* Static
     *  - states (unused)
-    *  - a debugging option       ***NOT YET IMPLEMENTED***TODO***
+    *  - a debugging option                 ***NOT IMPLEMENTED INTERNALLY***
+    *  - a verbose option for debugging     ***NOT IMPLEMENTED INTERNALLY***
     *  - browser detection
     *  - key mappings
     */
     DEBUG     : false,
+    VERBOSE   : false,
     STATES    : {
         FREE        : 1000,
         BLOCKED     : 1001
@@ -247,7 +251,9 @@ var Nickel = {
         blur_rgb_image :        __nhelpers.blur_rgb_image,
         blur_rgba_image :       __nhelpers.blur_rgba_image,
         get_blur_rgb_image :    __nhelpers.get_blur_rgb_image,
-        get_blur_rgba_image :   __nhelpers.get_blur_rgba_image
+        get_blur_rgba_image :   __nhelpers.get_blur_rgba_image,
+        init_globals :          __nhelpers.init_globals,
+        get_sub_prop :          __nhelpers.get_sub_prop
     },
 
     // utility proxies
@@ -259,7 +265,9 @@ var Nickel = {
         trim :          __nhelpers.trim_angle,
         atan2 :         __nhelpers.atan2,
         atan2_degs :    __nhelpers.atan2_degrees,
-        sleep :         __nhelpers.sleep
+        sleep :         __nhelpers.sleep,
+        iglob :         __nhelpers.init_globals,
+        subprop :       __nhelpers.get_sub_prop
     },//end .util shortcut
 
     // 2D vector proxies
@@ -280,6 +288,7 @@ var Nickel = {
         mult_s :    __nhelpers.scalar_product,
         div_s :     __nhelpers.scalar_divide,
         copy :      __nhelpers.copy_vector,
+        cp :        __nhelpers.copy_vector, // alias of above
         eq :        __nhelpers.is_equal
     },//end .v2d shortcut
 
@@ -1806,6 +1815,7 @@ function Viewport(html_canvas_element_id) {
     this.key_downs = Array(256);
     this.key_curr  = null;
     this.key_upped = null;
+    this.allow_keyboard = true;
 
 
 
@@ -1867,12 +1877,14 @@ function Viewport(html_canvas_element_id) {
         // update pressed key value(s)
         document.onkeydown = function(ev) {
             //console.log("Keydown! " + ev.key);
-            //function keys default action will not be ignored:
-            if (ev.key != 'F1'  && ev.key != 'F2'  && ev.key != 'F3' &&
-                ev.key != 'F4'  && ev.key != 'F5'  && ev.key != 'F6' &&
-                ev.key != 'F7'  && ev.key != 'F8'  && ev.key != 'F9' &&
-                ev.key != 'F10' && ev.key != 'F11' && ev.key != 'F12') {
-                ev.preventDefault();
+            //function keys default action will never be ignored:
+            if (!self.allow_keyboard) {
+                if (ev.key != 'F1'  && ev.key != 'F2'  && ev.key != 'F3' &&
+                    ev.key != 'F4'  && ev.key != 'F5'  && ev.key != 'F6' &&
+                    ev.key != 'F7'  && ev.key != 'F8'  && ev.key != 'F9' &&
+                    ev.key != 'F10' && ev.key != 'F11' && ev.key != 'F12') {
+                        ev.preventDefault();
+                }
             }
             self.key_downs[ev.keyCode] = true;
             self.key_curr = ev.keyCode;
@@ -2161,6 +2173,7 @@ function SimpleTimer() {
     // general
     this.id = Nickel.UTILITY.assign_id();
     this.type = 'SimpleTimer';
+    this.fs = [];
 
     // times
     this.birth = 0;
@@ -2179,8 +2192,11 @@ function SimpleTimer() {
 
         if (!this.stopped && this.started && !this.paused) {
             this.passed = Date.now() - this.birth;
-            if (this.passed >= this.max)
+            if (this.passed >= this.max) {
                 this.stopped = true;
+                for (let f of this.fs)
+                    f();
+            }
         }
     }
 
@@ -2210,6 +2226,18 @@ function SimpleTimer() {
         this.limit = this.birth + this.max;
     }
 
+    this.restart = function() {
+        //-- Resets the timer's state and begins the timer.
+        //--
+
+        this.stopped = false;
+        this.paused = false;
+        this.started = true;
+        this.birth = Date.now();
+        this.passed = 0;
+        this.limit = this.birth + this.max;
+    }
+
     this.pause = function() {
         //-- Pauses the timer.
         //--
@@ -2232,6 +2260,20 @@ function SimpleTimer() {
         return this.max - this.passed;
     }
 
+    this.on_alarm = function(callback = () => {}) {
+        //-- Adds a reaction function. (triggered when timer stops)
+        //-- 
+
+        this.fs.push(callback);
+    }
+    this.on_stop = this.on_alarm; // alias
+
+    this.clear_reactions = function() {
+        //-- Removes all reactions to alarm.
+        //--
+
+        this.fs = [];
+    }
 }//end SimpleTimer
 
 
@@ -2280,10 +2322,13 @@ function SimpleText(scene, text, font_family='sans-serif', size=12, color='black
         }
 
         // user custom update
-        this.update_more();
+        this.update_before();
 
         // render graphics
         this.draw();
+
+        // user custom update
+        this.update_more();
     }
 
     this.draw = function() {
@@ -2352,6 +2397,12 @@ function SimpleText(scene, text, font_family='sans-serif', size=12, color='black
         //--
 
     }
+
+    this.update_before = function() {
+        //--    Called in update. Meant to be over-ridden.
+        //--
+
+    }
     
     //
     // setters
@@ -2412,7 +2463,7 @@ function SimpleText(scene, text, font_family='sans-serif', size=12, color='black
 ///   SIMPLE IMAGE   ///////////////////////
 ////////////////////////////////////////////
 function SimpleImage(scene, source, w=0, h=0, pos=[0,0],
-        color='', outline='', outline_thickness=0) {
+        color=null, outline=null, outline_thickness=0) {
     
     // general
     this.id = Nickel.UTILITY.assign_id();
@@ -2458,10 +2509,13 @@ function SimpleImage(scene, source, w=0, h=0, pos=[0,0],
         }
 
         // user custom update
-        this.update_more();
+        this.update_before();
 
         // render graphics
         this.draw();
+
+        // user custom update
+        this.update_more();
     }
 
     this.draw = function() {
@@ -2505,26 +2559,29 @@ function SimpleImage(scene, source, w=0, h=0, pos=[0,0],
                 );
         } else {
             ctx.fillStyle = this.color;
-            ctx.strokeStyle = this.oultine;
+            ctx.strokeStyle = this.outline;
             ctx.lineWidth = this.outline_thickness;
+            ctx.beginPath();
             if (this.cropped)
                 // (params: x,y, w,h)
-                ctx.fillRect(
+                ctx.rect(
                     this.x, this.y,
                     this.width, this.height
                 );
             else if (this.cripped)
                 // (params: x,y, w,h)
-                ctx.fillRect(
+                ctx.rect(
                     this.x + this._crip.x, this.y + this._crip.y,
                     this._crip.w, this._crip.h
                 );
             else
                 // (params: x,y, w,h)
-                ctx.fillRect(
+                ctx.rect(
                     this.x, this.y,
                     this.width, this.height
                 );
+            if (this.outline) ctx.stroke();
+            if (this.color) ctx.fill();
         }
 
         ctx.restore();
@@ -2560,6 +2617,12 @@ function SimpleImage(scene, source, w=0, h=0, pos=[0,0],
     }
 
     this.update_more = function() {
+        //--    Called in update. Meant to be over-ridden.
+        //--
+
+    }
+
+    this.update_before = function() {
         //--    Called in update. Meant to be over-ridden.
         //--
 
@@ -2704,7 +2767,7 @@ function SimpleImage(scene, source, w=0, h=0, pos=[0,0],
 ////////////////////////////////////////////
 ///   SIMPLE BUTTON   //////////////////////
 ////////////////////////////////////////////
-function SimpleButton(scene, image, w=0, h=0, pos=[0,0]) {
+function SimpleButton(scene, image=null, w=0, h=0, pos=[0,0]) {
     
     // general
     this.id = Nickel.UTILITY.assign_id();
@@ -2738,12 +2801,17 @@ function SimpleButton(scene, image, w=0, h=0, pos=[0,0]) {
             return;
         }
 
+        // user custom update
+        this.update_before();
+
         // update image
-        this.image.x = this.x;
-        this.image.y = this.y;
-        this.image.width = this.width;
-        this.image.height = this.height;
-        this.image.update();
+        if (this.image) {
+            this.image.x = this.x;
+            this.image.y = this.y;
+            this.image.width = this.width;
+            this.image.height = this.height;
+            this.image.update();
+        }
 
         // events
         this.handle_events();
@@ -2752,15 +2820,19 @@ function SimpleButton(scene, image, w=0, h=0, pos=[0,0]) {
         this.update_more();
     }
 
+    /// Calculates mouse point based on canvas point
+    this.mouse_func = (x,y) => [x,y];
+
     this.handle_events = function() {
         //--    Handles mouse hover and lmb clicks.
         //--
         
         // mouse hover
-        if (this.scene.mouse_x <= this.right &&
-            this.scene.mouse_x >= this.left &&
-            this.scene.mouse_y <= this.bottom &&
-            this.scene.mouse_y >= this.top) {
+        var mpos = this.mouse_func(this.scene.mouse_x, this.scene.mouse_y);
+        if (mpos[0] <= this.right &&
+            mpos[0] >= this.left &&
+            mpos[1] <= this.bottom &&
+            mpos[1] >= this.top) {
             if (!this._hovering) {
                 this._hovering = true;
                 this.on_enter();
@@ -2817,6 +2889,12 @@ function SimpleButton(scene, image, w=0, h=0, pos=[0,0]) {
     }
 
     this.update_more = function() {
+        //--    Called in update. Meant to be over-ridden.
+        //--
+
+    }
+
+    this.update_before = function() {
         //--    Called in update. Meant to be over-ridden.
         //--
 
@@ -2938,6 +3016,9 @@ function SimpleHLoadBar(scene, img_under, img_over, w=0, h=0, pos=[0,0], l2r=tru
             return;
         }
 
+        // user custom update
+        this.update_before();
+
         // events
         this.handle_events();
 
@@ -3025,6 +3106,12 @@ function SimpleHLoadBar(scene, img_under, img_over, w=0, h=0, pos=[0,0], l2r=tru
     }
 
     this.update_more = function() {
+        //--    Called in update. Meant to be over-ridden.
+        //--
+
+    }
+
+    this.update_before = function() {
         //--    Called in update. Meant to be over-ridden.
         //--
 
@@ -3181,6 +3268,9 @@ function SimpleVLoadBar(scene, img_under, img_over, w=0, h=0, pos=[0,0], t2b=fal
             return;
         }
 
+        // user custom update
+        this.update_before();
+
         // events
         this.handle_events();
 
@@ -3268,6 +3358,12 @@ function SimpleVLoadBar(scene, img_under, img_over, w=0, h=0, pos=[0,0], t2b=fal
     }
 
     this.update_more = function() {
+        //--    Called in update. Meant to be over-ridden.
+        //--
+
+    }
+
+    this.update_before = function() {
         //--    Called in update. Meant to be over-ridden.
         //--
 
@@ -3434,6 +3530,9 @@ function SimplePanel(scene, img, w=0, h=0, pos=[0,0], rows=0, cols=0, vrows=0, v
             return;
         }
 
+        // user custom update
+        this.update_before();
+
         // events
         this.handle_events();
 
@@ -3509,15 +3608,19 @@ function SimplePanel(scene, img, w=0, h=0, pos=[0,0], rows=0, cols=0, vrows=0, v
         }
     }
 
+    /// Calculates mouse point based on canvas point
+    this.mouse_func = (x,y) => [x,y];
+
     this.handle_events = function() {
         //--    Handles mouse hover
         //--
 
         // mouse hover
-        if (this.scene.mouse_x <= this.right &&
-            this.scene.mouse_x >= this.left &&
-            this.scene.mouse_y <= this.bottom &&
-            this.scene.mouse_y >= this.top)
+        var mpos = this.mouse_func(this.scene.mouse_x, this.scene.mouse_y);
+        if (mpos[0] <= this.right &&
+            mpos[0] >= this.left &&
+            mpos[1] <= this.bottom &&
+            mpos[1] >= this.top)
             this.on_hover();
     }
 
@@ -3551,6 +3654,12 @@ function SimplePanel(scene, img, w=0, h=0, pos=[0,0], rows=0, cols=0, vrows=0, v
     }
 
     this.update_more = function() {
+        //--    Called in update. Meant to be over-ridden.
+        //--
+
+    }
+
+    this.update_before = function() {
         //--    Called in update. Meant to be over-ridden.
         //--
 
@@ -3806,11 +3915,11 @@ function SimplePoly(scene, vertices, is_equiangular=false, track_point=null) {
             return;
         }
 
-        // user custom update
-        this.update_more();
-
         // render graphics
         this.draw();
+
+        // user custom update
+        this.update_more();
     }
 
     this.draw = function() {
@@ -3824,7 +3933,7 @@ function SimplePoly(scene, vertices, is_equiangular=false, track_point=null) {
         }
 
         // skip if no stroke color
-        if (!this.stroke_color) {
+        if (!this.stroke_color && !this.stroke_color) {
             return;
         }
 
@@ -3848,7 +3957,9 @@ function SimplePoly(scene, vertices, is_equiangular=false, track_point=null) {
             ctx.lineTo(this.vertices[i][0], this.vertices[i][1]);
         }
         ctx.lineTo(this.x, this.y);
-        ctx.stroke();
+        //ctx.closePath(); // heyer
+        if (this.stroke_color)
+            ctx.stroke();
         if (this.stroke_fill)
             ctx.fill();
 
@@ -3913,7 +4024,10 @@ function SimplePoly(scene, vertices, is_equiangular=false, track_point=null) {
         //--    Returns track point
         //--
 
-        return this.tracker;
+        if (this.tracker)
+            return [this.tracker[0], this.tracker[1]];
+        else
+            return this.tracker;
     }
 
     this.set_tracker = function(track_point) {
@@ -4177,11 +4291,11 @@ function SimpleEllipse(scene, radius_h, radius_v) {
             return;
         }
 
-        // user custom update
-        this.update_more();
-
         // render graphics
         this.draw();
+
+        // user custom update
+        this.update_more();
     }
 
     this.draw = function() {
@@ -4195,7 +4309,7 @@ function SimpleEllipse(scene, radius_h, radius_v) {
         }
 
         // skip if no stroke color
-        if (!this.stroke_color) {
+        if (!this.stroke_color && !this.stroke_fill) {
             return;
         }
 
@@ -4216,7 +4330,9 @@ function SimpleEllipse(scene, radius_h, radius_v) {
         ctx.beginPath();
         // (params: cx,cy,rad_h,rad_v,rot,strt_angle,end_angle,anticlockwise)
         ctx.ellipse(this.cx,this.cy,this.radius_h,this.radius_v,-1*this.rot,0,2*Math.PI);
-        ctx.stroke();
+        //ctx.closePath(); // heyer
+        if (this.stroke_color)
+            ctx.stroke();
         if (this.stroke_fill)
             ctx.fill();
 
@@ -4403,11 +4519,11 @@ function SimpleCircle(scene, radius, track_point=null) {
             return;
         }
 
-        // user custom update
-        this.update_more();
-
         // render graphics
         this.draw();
+
+        // user custom update
+        this.update_more();
     }
 
     this.draw = function() {
@@ -4420,8 +4536,8 @@ function SimpleCircle(scene, radius, track_point=null) {
             return;
         }
 
-        // skip if no stroke color
-        if (!this.stroke_color) {
+        // skip if no stroke color and no stroke fill
+        if (!this.stroke_color && !this.stroke_fill) {
             return;
         }
 
@@ -4442,7 +4558,9 @@ function SimpleCircle(scene, radius, track_point=null) {
         ctx.beginPath();
         // (params: cx, cy, radius, start_angle, end_angle, anticlockwise?)
         ctx.arc(this.cx,this.cy,this.radius,0,2*Math.PI,false);
-        ctx.stroke();
+        //ctx.closePath(); // heyer
+        if (this.stroke_color)
+            ctx.stroke();
         if (this.stroke_fill)
             ctx.fill();
 
@@ -4488,7 +4606,10 @@ function SimpleCircle(scene, radius, track_point=null) {
         //--    Returns track point
         //--
 
-        return this.tracker;
+        if (this.tracker)
+            return [this.tracker[0], this.tracker[1]];
+        else
+            return this.tracker;
     }
 
     this.set_tracker = function(track_point) {
@@ -4712,11 +4833,11 @@ function SimpleLine(scene, startpoint, endpoint) {
             return;
         }
 
-        // user custom update
-        this.update_more();
-
         // render graphics
         this.draw();
+
+        // user custom update
+        this.update_more();
     }
 
     this.draw = function() {
@@ -4750,6 +4871,7 @@ function SimpleLine(scene, startpoint, endpoint) {
         ctx.beginPath();
         ctx.moveTo(this.x, this.y);
         ctx.lineTo(this.xend, this.yend);
+        //ctx.closePath(); // heyer
         ctx.stroke();
 
         ctx.restore();
@@ -5173,6 +5295,8 @@ function BoundingBox(sprite) {
 ///   COLLIDER HULL   //////////////////////
 ////////////////////////////////////////////
 function ColliderHull(sprite, approximate=true) {
+    // MAIN ISSUE currently: set_pos2 only works if the sprite is unscaled and unrotated
+    // the only time a collision hull can be set is before transforming the sprite
 
     // TODO: TEST EXTENSIVELY
     // (this, simple shapes, and some collision_detection functions)
@@ -5196,7 +5320,7 @@ function ColliderHull(sprite, approximate=true) {
         // create rectangle matching the sprite's basic dimensions
         this.shape = new SimplePoly(this.parent.scene,
                                     [tl,tr,br,bl],
-                                    true, this.parent.get_pos2());  // TODO: CHECK IF STILL A PROBLEM: THE PARENT ORIGIN POINT MAY NOT BE THE TRUE ORIGIN (BIG PROBLEM EEK)
+                                    true, this.parent.get_pos2()); // issue // TODO: CHECK IF STILL A PROBLEM: THE PARENT ORIGIN POINT MAY NOT BE THE TRUE ORIGIN (BIG PROBLEM EEK)
     }
 
     // keep track of how much shape has rotated and scaled
@@ -5228,7 +5352,7 @@ function ColliderHull(sprite, approximate=true) {
         // dimensions of parent don't make sense)
         if (!this.updated) {
             this.updated = true;
-            var par_pos = this.parent.get_pos2();
+            var par_pos = this.parent.get_pos2(); // issue?
             var hul_pos = this.shape.get_tracker();
             var diff = [par_pos[0] - hul_pos[0], par_pos[1] - hul_pos[1]];
 
@@ -5276,7 +5400,20 @@ function ColliderHull(sprite, approximate=true) {
         // create rectangle matching the sprite's basic dimensions
         this.shape = new SimplePoly(this.parent.scene,
                                     [tl,tr,br,bl],
-                                    true, this.parent.get_pos2());
+                                    true, this.parent.get_pos2()); // issue
+    }
+
+    this.recalibrate = function() {
+        //--    Attempts to re-position the hull relative to the
+        //--    Sprite. ONLY USE when sprite is NOT rotated or
+        //--    scaled. Will ACTUALLY reposition the hull once a
+        //--    hull update is triggered.
+        //--
+
+        this.shape.set_tracker([
+            this.shape.x + this.parent.origin[0],
+            this.shape.y + this.parent.origin[1]
+        ]);
     }
 
     this.set_shape = function(simple_shape) {
@@ -5286,7 +5423,7 @@ function ColliderHull(sprite, approximate=true) {
 
         this.shape = simple_shape;
         if (!simple_shape.get_tracker())
-            simple_shape.set_tracker(this.parent.get_pos2());
+            simple_shape.set_tracker(this.parent.get_pos2()); // issue
         this.updated = false;
         this.update_transformations();
     }
@@ -5298,7 +5435,7 @@ function ColliderHull(sprite, approximate=true) {
         
         var new_hull = new ColliderHull(spr, false);
         new_hull.set_shape(this.shape.copy_base());
-        new_hull.shape.set_tracker(spr.get_pos2());
+        new_hull.shape.set_tracker(spr.get_pos2()); // issue
         
         return new_hull;
     }
@@ -5662,11 +5799,11 @@ function Sprite(scene, image_data, has_bbox=true,
         // update history
         this.update_records();
 
-        // user custom update
-        this.update_more();
-
         // render graphics
         this.image && this.draw();
+
+        // user custom update
+        this.update_more();
     }
 
     this.draw = function() {
@@ -5702,12 +5839,21 @@ function Sprite(scene, image_data, has_bbox=true,
     }
 
     this.destroy = function() {
-        //--    Marks current instance for deletion
+        //--    Marks current instance for deletion AND nullifies sub-objects.
         //--
 
         this.dead = true;
         this.visibility = false;
         if (this.bbox) this.bbox = null;
+        if (this.hull) this.hull = null;
+    }
+
+    this.mark_dead = function() {
+        //--    Marks current instance for deletion ONLY.
+        //--
+
+        this.dead = true;
+        this.visibility = false;
     }
 
     this.hide = function() {
@@ -5836,6 +5982,7 @@ function Sprite(scene, image_data, has_bbox=true,
             return this.width * this.scale_x * this.scale_global;
         }
     }
+    this.get_width = this.get_w; // alias
 
     this.get_h = function() {
         //--    Returns width of sprite
@@ -5847,6 +5994,7 @@ function Sprite(scene, image_data, has_bbox=true,
             return this.height * this.scale_y * this.scale_global;
         }
     }
+    this.get_height = this.get_h; // alias
 
     this.get_w_orig = function() {
         //--    Returns width of sprite
@@ -6256,7 +6404,7 @@ function Sprite(scene, image_data, has_bbox=true,
         //--    relative to the default topleft corner
         //--
 
-        return this.origin;
+        return [this.origin[0], this.origin[1]];
     }
 
 
@@ -6270,6 +6418,7 @@ function Sprite(scene, image_data, has_bbox=true,
 
         return this.dead;
     }
+    this.is_dead = this.is_destroyed; // alias
 
     this.get_layer = function() {
         //--    Returns sprite's collision layer
@@ -6293,7 +6442,7 @@ function Sprite(scene, image_data, has_bbox=true,
         return this.type;
     }
 
-    this.flip_h = function() {
+    this.flip_h = function(flip_origin=false) {
         //--    Internally, horizontally flips the image.
         //--    Waits until image is loaded if not loaded.
         //--
@@ -6310,6 +6459,12 @@ function Sprite(scene, image_data, has_bbox=true,
             ctx.scale(-1,1);
             ctx.drawImage(i, -w, 0, w, h);
             i.src = c.toDataURL();
+
+            // flip origin if specified
+            if (flip_origin) {
+                var flipped_ox = this.origin[0] - 2 * (this.origin[0] - this.get_w() / 2);
+                this.set_origin([flipped_ox, this.origin[1]]);
+            }
         }
 
         // flip
@@ -6320,7 +6475,7 @@ function Sprite(scene, image_data, has_bbox=true,
         });
     }
 
-    this.flip_v = async function() {
+    this.flip_v = function(flip_origin=false) {
         //--    Internally, vertically flips the image.
         //--    Waits until image is loaded if not loaded.
         //--
@@ -6337,6 +6492,12 @@ function Sprite(scene, image_data, has_bbox=true,
             ctx.scale(1,-1);
             ctx.drawImage(i, 0, -h, w, h);
             i.src = c.toDataURL();
+
+            // flip origin if specified
+            if (flip_origin) {
+                var flipped_oy = this.origin[1] - 2 * (this.origin[1] - this.get_h() / 2);
+                this.set_origin([this.origin[0], flipped_oy]);
+            }
         }
 
         // flip
@@ -6667,19 +6828,19 @@ function Sprite(scene, image_data, has_bbox=true,
         return this.max_rot = degs;
     }
 
-    this.set_origin = function(offset) {
+    this.set_origin = function(point) {
         //--    Set the origin of rotation (pivot)
         //--    relative to the default topleft corner.
         //--    Also update the hull so it appears to
-        //--    not have changed
+        //--    not have changed.
         //--
 
         if (this.hull)
-            this.hull.shape.shift_pos(this.origin[0] - offset[0],
-                                      this.origin[1] - offset[1]);
+            this.hull.shape.shift_pos(this.origin[0] - point[0],
+                                      this.origin[1] - point[1]);
 
-        this.origin[0] = offset[0];
-        this.origin[1] = offset[1];
+        this.origin[0] = point[0];
+        this.origin[1] = point[1];
     }
 
     this.set_origin_centered = function() {
@@ -7052,10 +7213,8 @@ function Sprite(scene, image_data, has_bbox=true,
         var ang = 0;
         if (!instant) {
 
-            // avoid negative rotations
-            if (this.get_rot() < 0) {
-                this.set_rot(this.get_rot() + 360);
-            }
+            // avoid inflated turn values
+            turn = Nickel.util.trim(turn);
 
             // pick the quicker turn
             if (angle > 180) {
@@ -7119,6 +7278,9 @@ function Sprite(scene, image_data, has_bbox=true,
         // if gradual
         var ang = 0;
         if (!instant) {
+
+            // avoid inflated turn values
+            turn = Nickel.util.trim(turn);
 
             // pick the quicker turn
             if (turn > 180) {
@@ -7193,20 +7355,29 @@ function SpriteSelector(scene) {
         left : {}
     };
 
+    // for efficiency purposes
+    this.last_calculated_mpos = [0,0];
+
 
     // --
     // ------- ESSENTIAL methods ---------------------------------
     // --
 
 
+    /// Calculates mouse point based on canvas point
+    this.mouse_func = (x,y) => [x,y];
+    
     this.update_selector = function() {
         //--    Manages a selector box sprite that is used
-        //--    for selecting multiple sprites
+        //--    for selecting multiple sprites. Expects
+        //--    mouse to be reset externally.
         //--
 
         // get cursor position
-        var mx = this.scene.mouse_x;
-        var my = this.scene.mouse_y;
+        var mpos = this.mouse_func(this.scene.mouse_x, this.scene.mouse_y);
+        this.last_calculated_mpos = mpos;
+        var mx = mpos[0];
+        var my = mpos[1];
 
         // start
         if (this.scene.mouse_curr == this.selector.starter &&
@@ -7233,7 +7404,7 @@ function SpriteSelector(scene) {
             this.selector.is_visible()) {
 
             this.selector.hide();
-            this.scene.reset_mouse_upped();
+            //this.scene.reset_mouse_upped(); <- should be handled elsewhere... like GameManager
         }
 
         this.selector.update();
@@ -7258,6 +7429,7 @@ function SpriteSelector(scene) {
             ctx.rect(this.selector.get_x(), this.selector.get_y(),
                      this.selector.get_w(), this.selector.get_h());
 
+            //ctx.closePath(); // heyer
             ctx.stroke();
             ctx.restore();
         }
@@ -7481,9 +7653,9 @@ function SpriteSelector(scene) {
         //--    (ordered by collision layer)
         //--
 
-        var mx = this.scene.mouse_x;
-        var my = this.scene.mouse_y;
-        return this.get_under_point(sprites,mx,my,sorted);
+        var mpos = this.mouse_func(this.scene.mouse_x, this.scene.mouse_y);
+        this.last_calculated_mpos = mpos;
+        return this.get_under_point(sprites,mpos[0],mpos[1],sorted);
     }
 
     this.get_under_sprite = function(sprites, spr, sorted=true) {
@@ -7980,6 +8152,16 @@ function Heap(_type='max') {
         return objects;
     }
 
+    this.get_sort = function() {
+        //--    gets all objects from the heap
+        //--    by the order of their priority,
+        //--    stored in an array that is returned
+        //--    while retaining the heap's structure
+        //--
+        
+        return this.copy().sort();
+    }
+
     this.find = function(o,same) {
         //--    searches for a node with the object 'o'
         //--    using a compare function 'same'
@@ -8046,6 +8228,22 @@ function Heap(_type='max') {
         }
 
         return true;
+    }
+
+    this.copy = function() {
+        //--    creates a copy of this heap.
+        //--
+        //--    note: time complexity:  N
+        //--
+
+        var heap = new Heap(this.type);
+        for (let node of this.list) {
+            var newnode = new HeapNode();
+            newnode.priority = node.priority;
+            newnode.obj = node.obj;
+            heap.list.push(newnode);
+        }
+        return heap;
     }
 
 }//end Heap
@@ -8450,6 +8648,8 @@ function QuadTree(max_objs, max_depth, bounds) {
                 context.beginPath();
                 context.rect(curr.bounds.x, curr.bounds.y,
                                   curr.bounds.w, curr.bounds.h);
+
+                //context.closePath(); // heyer
                 context.stroke();
             }
 
@@ -8469,6 +8669,7 @@ function QuadTree(max_objs, max_depth, bounds) {
                     context.rect(o.bounds.x, o.bounds.y,
                                       o.bounds.w, o.bounds.h);
                 }
+                //context.closePath(); // heyer
                 context.stroke();
             }
 
@@ -8750,3 +8951,240 @@ function Tree(node) {
         }
     }
 }//end Tree
+
+
+
+////////////////////////////////////////////
+///   PRIORITY QUEUE   ///////////////////// (LINKED LIST METHOD)
+////////////////////////////////////////////
+function PriorityQueueNode(obj, priority=0, next=null) {
+
+    // the priority of a node determines how much
+    // to traverse on insertion
+    this.priority = priority;
+
+    // holds the data object to be enqueued
+    this.obj = obj;
+
+    // node in front of this node. If null, this
+    // is the leading node in the queue
+    this.next = next;
+}
+function PriorityQueue(sort_by = (a,b) => a > b) {
+
+    this.sort_by = sort_by;
+
+    this.tail = null; // has the highest priority
+
+    this.head = null;
+
+    this.size = 0;
+
+    this.in = function(obj, priority=0) {
+        //--    enqueues object into the list. Returns
+        //--    enqueued PriorityQueueNode
+        //--
+
+        this.size++;
+
+        // case: no tail
+        if (!this.tail) {
+            this.tail = new PriorityQueueNode(obj, priority);
+            this.head = this.tail;
+            return this.tail;
+        }
+
+        // case: tail
+        var curr = this.tail;
+        var prev = null;
+        while (curr && this.sort_by(priority, curr.priority)) {
+            prev = curr;
+            curr = curr.next;
+        }
+
+        // case: tail -> no nodes traversed
+        if (!prev) {
+            this.tail = new PriorityQueueNode(obj, priority, this.tail);
+            return this.tail;
+        }
+
+        // case: tail -> all nodes traversed
+        if (!curr) {
+            prev.next = new PriorityQueueNode(obj, priority);
+            this.head = prev.next;
+            return prev.next;
+        }
+
+        // case: tail -> some nodes traversed
+        prev.next = new PriorityQueueNode(obj, priority, curr);
+        return prev.next;
+    }
+
+    this.out = function() {
+        //--    dequeues the highest priority object
+        //--
+
+        // case: no tail
+        if (!this.tail) {
+            return null;
+        }
+
+        this.size--;
+
+        // case: tail -> no more nodes
+        if (!this.tail.next) {
+            var temp = this.tail;
+            this.tail = null;
+            this.head = null;
+            return temp;
+        }
+
+        // case: tail -> some more nodes
+        this.temp = this.tail;
+        this.tail = this.tail.next;
+        return this.temp;
+    }
+
+    this.first = function() {
+        //--    returns the highest priority object
+        //--
+
+        return this.tail ? this.tail.obj : null;
+    }
+
+    this.last = function() {
+        //--    returns the lowest priority object
+        //--
+
+        return this.head ? this.head.obj : null;
+    }
+
+    this.is_empty = function() {
+        //--    returns if queue is empty
+        //--
+
+        return !this.tail;
+    }
+
+    this.count = function() {
+        //--    returns size of queue
+        //--
+
+        return this.size;
+    }
+
+    this.clear = function() {
+        //--    removes all objects from queue
+        //--
+
+        this.tail = null;
+        this.head = null;
+        this.size = 0;
+    }
+
+    this.data = function() {
+        //--    returns sorted list of objects.
+        //--    (0th index is highest priority)
+        //--
+
+        var sorted = [];
+        var curr = this.tail;
+        while (curr) {
+            sorted.push(curr.obj);
+            curr = curr.next;
+        }
+        return sorted;
+    }
+
+    this.dump = function() {
+        //--    dequeues sorted list of objects.
+        //--    (0th index is highest priority)
+        //--
+
+        var sorted = [];
+        var curr = this.tail;
+        while (curr) {
+            sorted.push(curr.obj);
+            curr = curr.next;
+        }
+        this.clear();
+        return sorted;
+    }
+
+    this.each = function(callback = (object, index, priority) => {},
+        break_when = (object, index, priority) => {}) {
+        //--    runs callback on each object from
+        //--    highest priority to lowest. Can be broken
+        //--    on the given break_when condition callback
+        //--
+
+        var i = 0;
+        var curr = this.tail;
+        while (curr) {
+            if (break_when(curr.obj, i, curr.priority)) {
+                break;
+            }
+            callback(curr.obj, i, curr.priority);
+            curr = curr.next;
+            i++;
+        }
+    }
+
+    this.at = function(priority) {
+        //--    returns all objects with this priority
+        //--
+
+        var list = [];
+        var i = 0;
+        var curr = this.tail;
+        while (curr) {
+            if (curr.priority === priority) {
+                list.push(curr.obj);
+            }
+            curr = curr.next;
+            i++;
+        }
+        return list;
+    }
+
+    this.each_at = function(priority, callback = (object, index, priority) => {},
+        break_when = (object, index, priority) => {}) {
+        //--    runs callback on each object with
+        //--    the given priority. Can be broken on
+        //--    the given break_when condition callback
+        //--
+
+        var i = 0;
+        var curr = this.tail;
+        while (curr) {
+            if (break_when(curr.obj, i, curr.priority)) {
+                break;
+            }
+            if (curr.priority === priority) {
+                callback(curr.obj, i, curr.priority);
+            }
+            curr = curr.next;
+            i++;
+        }
+    }
+
+    this.first_at = function(priority, callback = (object, index, priority) => {}) {
+        //--    runs callback on the first object with
+        //--    the given priority. Has an additional
+        //--    benefit of also returning the callback's
+        //--    return value (unlike each and each_at).
+        //--    If not found, returns false
+        //--
+
+        var i = 0;
+        var curr = this.tail;
+        while (curr) {
+            if (curr.priority === priority) {
+                return callback(curr.obj, i, curr.priority);
+            }
+            curr = curr.next;
+            i++;
+        }
+        return false;
+    }
+}
