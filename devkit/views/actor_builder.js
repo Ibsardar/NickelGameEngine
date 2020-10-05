@@ -25,12 +25,13 @@
 import { Game } from '../../scripts/game.js';
 import { DATA } from '../../scripts/data_loader2.js';
 import { GameManager } from '../../scripts/managers/GameManager.js';
-import { GRID_OPTS, FIRE_OPTS, AB_UI_OPTS } from '../scripts/Options.js';
+import { GRID_OPTS, FIRE_OPTS, AB_UI_OPTS, TEST_PROJ_OPTS } from '../scripts/Options.js';
 import { View } from '../../scripts/View.js';
 import { UIBuilder } from '../../scripts/builders/UIBuilder.js';
 import { Limb } from '../../scripts/Limb.js';
 import { Interact } from '../../scripts/managers/InteractionManager.js';
 import { EditorItem } from '../scripts/EditorItem.js';
+import { Projectile } from '../../scripts/projectiles/Projectile.js';
 
 export { actor_builder }
 
@@ -115,7 +116,9 @@ var reset_grid = () => {
             grid_color : '#494943', // slightly yellow when snapping
             rows : !snaps[1] ? 1 : sectors[1],
             cols : !snaps[0] ? 1 : sectors[0],
-            border_thickness : 1
+            border_thickness : 1,
+            step : STEPS.WORLD,
+            layer : LAYERS.WORLD.MAIN
         });
         console.log('Grid snapped!');
     // replace grid (with default liness)
@@ -125,7 +128,9 @@ var reset_grid = () => {
             position : [0,0],
             width : Game.get_w(),
             height : Game.get_h(),
-            grid_color : '#434343'
+            grid_color : '#434343',
+            step : STEPS.WORLD,
+            layer : LAYERS.WORLD.MAIN
         });
         console.log('Grid reset to default!');
     }
@@ -160,7 +165,7 @@ actor_builder.game_init = () => {
     Game.set_fps(120);
     GameManager.reset();
     GameManager.init(Game);
-    GameManager.world = new Grid(GRID_OPTS);
+    GameManager.world = new Grid(GRID_OPTS); /** @todo also check for renderer and set a flag for world rendering enabled (to help handle Projectiles, Actors, and PBSs) */
     GameManager.set_groups(['game'], 'only');
     GameManager.register({
         classref: EditorItem, // need for gc, need for interact-mngr
@@ -356,6 +361,26 @@ actor_builder.game_init = () => {
     main_menu_btn.on_release = () => {
         GameManager.destroy_all();
         View.previous(actor_builder).init();
+    }
+    var test_btn = UIBuilder.text_button({
+        text : 'Test: Projectile',
+        align : 'left',
+        position : [100,200],
+        size : 3,
+        text_size : 3,
+        step : STEPS.UI,
+        layer : LAYERS.UI.MAIN
+    });
+    test_btn.on_hover   = () => { test_btn.image.color = 'orange'; }
+    test_btn.on_leave   = () => { test_btn.image.color = UIBuilder.color_secondary; }
+    test_btn.on_click   = () => { test_btn.image.color = 'red'; }
+    test_btn.on_release = () => {
+        var p = new Projectile(Game, TEST_PROJ_OPTS);
+        p.position = GameManager.world.get_mouse();
+        p.speed = 1;
+        p.direction = Nickel.util.r_num(0,359);
+        p.scale = [2, 2];
+        GameManager.world.renderer.obj.add(STEPS.GAME, LAYERS.GAME.MAIN, p);
     }
 }
 

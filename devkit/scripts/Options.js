@@ -22,7 +22,7 @@ import { Game } from "../../scripts/game.js";
 import { DATA } from "../../scripts/data_loader2.js";
 import { GameManager } from "../../scripts/managers/GameManager.js";
 
-export { GRID_OPTS, SIMPLE_GRID_OPTS, FIRE_OPTS, MENU_UI_OPTS, AB_UI_OPTS, DEMO_UI_OPTS };
+export { GRID_OPTS, SIMPLE_GRID_OPTS, FIRE_OPTS, MENU_UI_OPTS, AB_UI_OPTS, DEMO_UI_OPTS, TEST_PROJ_OPTS };
 
 // UI by view options
 var MENU_UI_OPTS = {
@@ -53,6 +53,16 @@ var DEMO_UI_OPTS = {
     color_secondary : '#343434',
     color_tertiary : 'red',
     outline_thickness : 2
+}
+
+// Projectiles
+var TEST_PROJ_OPTS = {
+    sprite_data : DATA.IMG.CREEP_01,
+    script_effect : () => {console.log('updated projectile!');},
+    on_create : () => {console.log('created projectile!');},
+    on_hit : () => {console.log('hit projectile!');},
+    on_destroyed : () => {console.log('destroyed projectile!');},
+    on_delete : () => {console.log('deleted projectile!');}
 }
 
 // all of these are used in GRID_OPTS
