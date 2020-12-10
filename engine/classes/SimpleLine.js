@@ -1,0 +1,45 @@
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Author:         Ibrahim Sardar
+//  Date:           10/8/2020
+//  Description:    see below...
+//
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Honor Pledge:
+//
+//  I pledge that I have neither given nor received any help on this assignment.
+//
+//  ibsardar
+//
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2020 Copyright Holder All Rights Reserved.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+export { SimpleLine };
+
+/**
+ * @class SimpleLine
+ * 
+ * @todo describe
+ */
+class SimpleLine {
+
+    /// Default constructor.
+    constructor() {}
+
+    //
+    // statics
+    //
+
+    //...
+
+    //
+    // non-statics
+    //
+    
+    //...
+
+}//end SimpleLine

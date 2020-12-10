@@ -1,3 +1,4 @@
+import { implement } from "../managers/ImplementsManager.js";
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  Author:         Ibrahim Sardar
@@ -19,6 +20,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 import { Eventable } from "./Eventable.js";
+import { Spriteable } from "./Spriteable.js";
 
 export { AbstractSuperSprite };
 
@@ -83,6 +85,20 @@ class AbstractSuperSprite extends Eventable {
     
     /**@interface */
     destroy () {}
+    
+    /**@interface */
+    is_destroyed () {}
+
+    /**
+     * @interface
+     * Indicates wether the object is self.
+     * 
+     * @param {Object} obj
+     * @returns {Boolean}
+     */
+    same_as (obj) {
+        return this === obj;
+    }
 
     get scene () { return this._scene; }
     get state () { return this._state; }
@@ -95,3 +111,5 @@ class AbstractSuperSprite extends Eventable {
     _id = Nickel.UTILITY.assign_id();
 
 }//end AbstractSuperSprite
+
+implement(Spriteable).in(AbstractSuperSprite);

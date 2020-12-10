@@ -37,9 +37,9 @@ class StructureActor extends Actor {
      * @param  {Viewport} scene main viewport to paint on.
      * @param ...
      */
-    constructor(scene, skeleton, group) {
+    constructor(scene, skeleton) {
 
-        super(scene, {skeleton: skeleton, group: group});
+        super(scene, {skeleton: skeleton});
     }
 
     _name;

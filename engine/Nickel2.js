@@ -2307,6 +2307,7 @@ var LocomotiveBuilder = {
 
             return copy;
         }
+        unit.copy = unit.copy_base; // reset alias
 
         // edit frozen copy ability
         unit.copy_frozen = function(do_update=true){
@@ -4203,7 +4204,7 @@ var ParticleSystemBuilder = {
 
         // create update function
         // - updates all particles in the system
-        sys.update = function() {
+        sys.prototype.update = function() {
 
             // check death condition
             if (sys.dead || !sys.visible)

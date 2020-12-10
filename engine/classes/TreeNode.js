@@ -1,0 +1,45 @@
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Author:         Ibrahim Sardar
+//  Date:           10/8/2020
+//  Description:    see below...
+//
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Honor Pledge:
+//
+//  I pledge that I have neither given nor received any help on this assignment.
+//
+//  ibsardar
+//
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2020 Copyright Holder All Rights Reserved.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+export { TreeNode };
+
+/**
+ * @class TreeNode
+ * 
+ * @todo describe
+ */
+class TreeNode {
+
+    /// Default constructor.
+    constructor() {}
+
+    //
+    // statics
+    //
+
+    //...
+
+    //
+    // non-statics
+    //
+    
+    //...
+
+}//end TreeNode

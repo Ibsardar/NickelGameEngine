@@ -35,13 +35,12 @@ class UnitActor extends Actor {
      * @param  {Viewport} scene main viewport to paint on.
      * @param ...
      */
-    constructor(scene, skeleton, group) {
+    constructor(scene, skeleton) {
 
-        super(scene, {skeleton: skeleton, group: group});
+        super(scene, {skeleton: skeleton});
     }
 
     // HERE... (Effects look good... here, we must call certain effects when getting hit, when hitting, and on-update........figure out how to distnguish these calls - should be easy)
-    
 
     _name;
     _health = 0;

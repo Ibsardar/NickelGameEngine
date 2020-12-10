@@ -1,3 +1,4 @@
+import { implement } from "../managers/ImplementsManager.js";
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  Author:         Ibrahim Sardar
@@ -19,11 +20,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 import { AbstractSuperSprite } from "./AbstractSuperSprite.js";
+import { implement } from "../managers/ImplementsManager.js";
+import { Spriteable } from "./Spriteable.js";
+import { Collidable } from "./Collidable.js";
+import { ComplexSprite } from "./ComplexSprite.js";
 
 export { SuperSprite };
 
 /**
  * @class SuperSprite
+ * @implements Spriteable
+ * @implements Collidable
  * 
  * An optionally abstract class that improves the capability of
  * the standard sprite/locomotive.
@@ -45,7 +52,7 @@ class SuperSprite extends AbstractSuperSprite {
      *      before_effect : () => {},
      *      after_effect : () => {},
      *      on_create : () => {},
-     *      on_hit : () => {},
+     *      on_hit : () => {}, 
      *      on_destroyed : () => {},
      *      on_delete : () => {}
      * }} data data containing options
@@ -161,10 +168,11 @@ class SuperSprite extends AbstractSuperSprite {
      * 
      * *** Note: does not copy event or pre/post update functions ***
      * 
+     * @returns {SuperSprite}
      */
     copy () {
         return new SuperSprite(this.scene, {
-            sprite : this._sprite.copy_base(),
+            sprite : this._sprite.copy(),
             bounds : this._bounds ? {
                 left : this._bounds[0],
                 bottom : this._bounds[1],
@@ -180,13 +188,74 @@ class SuperSprite extends AbstractSuperSprite {
      * 
      */
     destroy (trigger_now=false) {
-        this.sprite.destroy();
+        this._sprite.destroy();
         if (trigger_now) {
             SuperSprite._count--;
             SuperSprite._dead_count++;
             this._state = SuperSprite.DESTROYED;
             this.trigger('destroy', this);
         }
+    }
+
+    /**
+     * @interface
+     * Is underlying sprite destroyed?
+     * 
+     * @returns {Boolean}
+     */
+    is_destroyed () {
+        return this._sprite.is_destroyed();
+    }
+
+    /**
+     * @interface
+     * Indicates wether the collidable is colliding with an object or not.
+     * @param {Object} obj
+     * @returns {Boolean}
+     */
+    colliding_with (obj) {
+        return this._sprite.colliding_with(obj);
+    }
+    
+    /**
+     * @interface
+     * Indicates wether the collidable is colliding with an object or not.
+     * If colliding, also resolve the collision.
+     * @param {Object} obj
+     * @param {Boolean} resolve_me should i be re-positioned so that i do not infringe you?
+     * @param {Boolean} resolve_you should you be re-positioned so that you do not infringe me?
+     * @param {Number} my_heaviness how difficult am i to re-position?
+     * @param {Number} your_heaviness how difficult are you to re-position?
+     * @param {null|[Number,Number]} my_velocity current velocity of me. if null, no velocity correction
+     * @param {null|[Number,Number]} your_velocity current velocity of you. if null, no velocity correction
+     * @returns {Boolean}
+     */
+    resolve_with (obj, resolve_me=true, resolve_you=true, my_heaviness=1,
+        your_heaviness=1, my_velocity=null, your_velocity=null) {
+        return this._sprite.resolve_with(
+            obj,
+            resolve_me, resolve_you,
+            my_heaviness, your_heaviness,
+            my_velocity, your_velocity
+        );
+    }
+    
+    /**
+     * @interface
+     * Indicates wether the collidable has collisions enabled or not.
+     * @returns {Boolean}
+     */
+    is_collidable () {
+        return this._sprite.is_collidable();
+    }
+
+    /**
+     * @interface
+     * Returns bounds for collision-checking like so: [x,y,w,h]
+     * @returns {Number[]}
+     */
+    get_bounds_for_qt () {
+        return this._sprite.get_bounds_for_qt();
     }
 
     /**
@@ -279,26 +348,13 @@ class SuperSprite extends AbstractSuperSprite {
     get size() { return [this.sprite.get_w(), this.sprite.get_h()]; }
     get width() { return this.sprite.get_w(); }
     get height() { return this.sprite.get_h(); }
-    
-    /**
-     * Is the projectile collidable or not.
-     * 
-     * @type {Boolean} collidable or not
-     */
-    get collidable () { return this._collidable; }
-    set collidable (bool) {
-        this._collidable = bool;
-        if (this._collidable && !this._sprite.hull) {
-            console.error('ERROR: SuperSprite>set collidable: sprite does not have a hull so super sprite cannot be collidable.');
-            this._collidable = false;
-        }
-    }
 
     _sprite;
 
+    // (if sprite goes out of bounds, it is destroyed)
     // left, bottom, right, top
     _bounds;
-    
-    _collidable;
 
 }//end SuperSprite
+
+implement(Collidable).in(SuperSprite);

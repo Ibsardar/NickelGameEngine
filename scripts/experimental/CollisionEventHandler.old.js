@@ -40,13 +40,13 @@ class CollisionEventHandler {
      * Handles collision events of various classes.
      * 
      * @param {Function} class_t Class type for determining how to handle events
-     * @param {Array[]} targets dictionary of grouped targets
-     * @param {QuadTree} trees dictionary of filled-up quadtrees
+     * @param {Object[]} targets list of targets
+     * @param {QuadTree[]} trees dictionary of filled-up quadtrees
      * @param {Object[]} collider_struct additional structure holding the sprite
      * @param {Object[]} trigger_struct additional structure holding the triggerable object
      * @param {String} name name of the event that is being triggered
      */
-    static handle(class_t, targets, trees, collider_struct=[], trigger_struct=[], name='hit') {
+    static handle(class_t, targets=[], trees=[], collider_struct=[], trigger_struct=[], name='hit') {
 
         CollisionEventHandler._handle_general(targets, trees, collider_struct, trigger_struct, name, class_t);
     }

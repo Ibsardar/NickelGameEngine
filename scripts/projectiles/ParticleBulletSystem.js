@@ -318,6 +318,7 @@ class ParticleBulletSystem {
                     for (let ptc of ptcs) {
                         if (!ptc.dead && ptc.collidable) {
                             var pos = ptc.get_canvas_pos();
+                            // doing this is unecessary... just add a reference from ptc to pbs within pbs
                             var pair = {
                                 ptc : ptc,
                                 pbs : sys

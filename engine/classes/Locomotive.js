@@ -1,0 +1,45 @@
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Author:         Ibrahim Sardar
+//  Date:           10/8/2020
+//  Description:    see below...
+//
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Honor Pledge:
+//
+//  I pledge that I have neither given nor received any help on this assignment.
+//
+//  ibsardar
+//
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (c) 2020 Copyright Holder All Rights Reserved.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+export { Locomotive };
+
+/**
+ * @class Locomotive
+ * 
+ * @todo describe
+ */
+class Locomotive {
+
+    /// Default constructor.
+    constructor() {}
+
+    //
+    // statics
+    //
+
+    //...
+
+    //
+    // non-statics
+    //
+    
+    //...
+
+}//end Locomotive

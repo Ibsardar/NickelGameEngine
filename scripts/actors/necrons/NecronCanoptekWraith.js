@@ -37,15 +37,14 @@ class NecronCanoptekWraith extends UnitActor {
     /**
      * Default constructor.
      * 
-     * @param {String} group 
      * @param {String} team
      */
-    constructor(group, team) {
+    constructor(team) {
 
         var wraith_sk = new CanoptekWraithSkeleton();
         wraith_sk.set_images(NecronCanoptekWraith.data, 'all', true);
 
-        super(GaMa.scene, wraith_sk, group);
+        super(GaMa.scene, wraith_sk);
 
         this.init_body_from_data(NecronCanoptekWraith.data);
 

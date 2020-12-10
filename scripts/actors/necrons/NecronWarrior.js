@@ -37,15 +37,14 @@ class NecronWarrior extends UnitActor {
     /**
      * Default constructor.
      * 
-     * @param {String} group 
      * @param {String} team
      */
-    constructor(group, team) {
+    constructor(team) {
 
         var humanoid_sk = new HumanoidSkeleton();
         humanoid_sk.set_images(NecronWarrior.data, 'all', true);
 
-        super(GaMa.scene, humanoid_sk, group);
+        super(GaMa.scene, humanoid_sk);
 
         this.init_body_from_data(NecronWarrior.data);
 

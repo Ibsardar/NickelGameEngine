@@ -6047,6 +6047,17 @@ function Sprite(scene, image_data, has_bbox=true,
         return this.image;
     }
 
+    this.get_img_data = function() {
+        //--    Returns the image data used to create this sprite
+        //--
+
+        return this.image ? {
+            img:this.image.src,
+            w:this.width,
+            h:this.height
+        } : null;
+    }
+
     this.get_scaleg = function() {
         //--    Returns global scale of sprite
         //--
@@ -6892,70 +6903,35 @@ function Sprite(scene, image_data, has_bbox=true,
     // --
 
 
-    // TODO: OPTIMIZE
-    this.colliding_with = function(target, layer_check=true) {
+    this.colliding_with = function(target) {
         //--    Returns true if target is colliding
         //--    with self (and in same layer if specified)
         //--
 
-        // OPTIMIZE: Use some Nickel mapping variable to make this type check efficient
-
-        // if sprite, check layer if specified, then check their hulls
-        if (target.type == "Sprite" || target.type == "Locomotive") {
-
-            // no layer check
-            if (!layer_check) {
-
-                return this.hull.detect_collision(target.hull);
-            // same layer check
-            } else if (layer_check && (target.get_layer() == this.get_layer())) {
-
-                return this.hull.detect_collision(target.hull);
-            // different layer
-            } else {
-                return false;
-            }
-        }
+        // if sprite, check hull
+        if (target instanceof Sprite)
+            return this.hull.detect_collision(target.hull);
 
         // target is not a sprite
         return this.hull.detect_collision(target);
     }
 
-    // TODO: OPTIMIZE, ADD OPTION TO USE ROTATION FOR PREDICTION <--- TODO... CHECK IF STILL NEEDED !!!
-    this.resolve_with = function(target, layer_check=true, resolve_me=true, resolve_you=true,
+    // TODO: ADD OPTION TO USE ROTATION FOR PREDICTION <--- TODO... CHECK IF STILL NEEDED !!! ...i think it is still needed
+    this.resolve_with = function(target, resolve_me=true, resolve_you=true,
                                  my_heaviness=1, ur_heaviness=1,
                                  my_velocity=null, ur_velocity=null) {
         //--    Same as Sprite.colliding_with but also
         //--    resolves collisions.
         //--
 
-        // OPTIMIZE: Use some Nickel mapping variable to make this type check efficient
-
         // keeps track of shift amount of self and target, respectively
         // (ultimately also keeps track of if a collision occurred)
         var resolve = null;
 
-        // if sprite, check layer if specified, then check their hulls
-        if (target.type == "Sprite" || target.type == "Locomotive") {
-
-            // no layer check
-            if (!layer_check) {
-
-                resolve = this.hull.resolve_collision(target.hull,
-                                                   resolve_me, resolve_you,
-                                                   my_heaviness, ur_heaviness,
-                                                   my_velocity, ur_velocity);
-            // same layer check
-            } else if (layer_check && (target.get_layer() == this.get_layer())) {
-
-                resolve = this.hull.resolve_collision(target.hull,
-                                                   resolve_me, resolve_you,
-                                                   my_heaviness, ur_heaviness,
-                                                   my_velocity, ur_velocity);
-            // different layer
-            } else {
-                return false;
-            }
+        // if sprite, check hull
+        if (target instanceof Sprite) {
+            resolve = this.hull.resolve_collision(target.hull, resolve_me, resolve_you,
+                my_heaviness, ur_heaviness, my_velocity, ur_velocity);
             
             // sync resolution with target as well as
             // return false if no collision occurred
@@ -6966,11 +6942,8 @@ function Sprite(scene, image_data, has_bbox=true,
 
         // target is not a sprite
         } else {
-
-            resolve = this.hull.resolve_collision(target,
-                                               resolve_me, resolve_you,
-                                               my_heaviness, ur_heaviness,
-                                               my_velocity, ur_velocity);
+            resolve = this.hull.resolve_collision(target, resolve_me, resolve_you,
+                my_heaviness, ur_heaviness, my_velocity, ur_velocity);
         }
         
         // sync resolution with self as well
@@ -7034,6 +7007,7 @@ function Sprite(scene, image_data, has_bbox=true,
 
         return spr;
     }
+    this.copy = this.copy_base; // alias
 
     this.copy_frozen = function(do_update=true) {
         //--    Returns a frozen copy of self
@@ -7327,6 +7301,7 @@ function Sprite(scene, image_data, has_bbox=true,
 ////////////////////////////////////////////
 ///   SPRITESELECTOR   /////////////////////
 ////////////////////////////////////////////
+/**@deprecated */
 function SpriteSelector(scene) {
 
 
@@ -8715,6 +8690,18 @@ function QuadTree(max_objs, max_depth, bounds) {
         for (var i in node.children) {
             this.print(node.children[i]);
         }
+    }
+
+    this.re_init = function(max_objs, max_depth, bounds) {
+        //--    clears and resets root node, ultimately
+        //--    clearing the entire quadtree. Also re-
+        //--    inits quadtree as if it was newly created.
+        //--
+
+        this.clear();
+        this.root.bounds = bounds;
+        MAX_OBJS = max_objs;
+        MAX_DPTH = max_depth;
     }
 
 }//end QuadTree
