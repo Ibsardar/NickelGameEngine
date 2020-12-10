@@ -48,6 +48,8 @@ class NecronWarrior extends UnitActor {
 
         this.init_body_from_data(NecronWarrior.data);
 
+        this.init_body_from_data(NecronWarrior.data);
+
         var gun = new GaussRifle();
         this.equip(gun, 'rarm');
         gun.flip_v();
