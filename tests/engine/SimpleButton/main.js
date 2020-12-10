@@ -26,6 +26,7 @@ import { Game } from '../scripts/game.js';
 import { GameLoop, InitGame } from '../../../scripts/update.js';
 import { GameManager } from '../../../scripts/managers/GameManager.js';
 import { SimpleButton } from '../../../engine/classes/SimpleButton.js';
+import { SimpleImage } from '../../../engine/classes/SimpleImage.js';
 
 // Set FPS:
 Game.set_fps(60); // 60 is best
@@ -39,7 +40,8 @@ InitGame.does = () => {
     Nickel.DEBUG = true;
     GameManager.init(Game);
 
-    btn = new SimpleButton(Game, /** @todo: SimpleImage */, 20, 40, [200,150]);
+    img = new SimpleImage();
+    btn = new SimpleButton(Game, img, 20, 40, [200,150]);
 }
 
 // Game Loop:
@@ -47,7 +49,7 @@ GameLoop.does = () => {
 
     Game.clear();
 
-    // update stuff here...
+    btn.update();
 
     GameManager.handle();
 }
